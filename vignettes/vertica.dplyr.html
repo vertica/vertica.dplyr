@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title>Vertica.dplyr</title>
+
+<script type="text/javascript">
+window.onload = function() {
+  var imgs = document.getElementsByTagName('img'), i, img;
+  for (i = 0; i < imgs.length; i++) {
+    img = imgs[i];
+    // center an image if it is the only element of its parent
+    if (img.parentElement.childElementCount === 1)
+      img.parentElement.style.textAlign = 'center';
+  }
+};
+</script>
+
+<!-- Styles for R syntax highlighter -->
+<style type="text/css">
+   pre .operator,
+   pre .paren {
+     color: rgb(104, 118, 135)
+   }
+
+   pre .literal {
+     color: #990073
+   }
+
+   pre .number {
+     color: #099;
+   }
+
+   pre .comment {
+     color: #998;
+     font-style: italic
+   }
+
+   pre .keyword {
+     color: #900;
+     font-weight: bold
+   }
+
+   pre .identifier {
+     color: rgb(0, 0, 0);
+   }
+
+   pre .string {
+     color: #d14;
+   }
+</style>
+
+<!-- R syntax highlighter -->
+<script type="text/javascript">
+var hljs=new function(){function m(p){return p.replace(/&/gm,"&amp;").replace(/</gm,"&lt;")}function f(r,q,p){return RegExp(q,"m"+(r.cI?"i":"")+(p?"g":""))}function b(r){for(var p=0;p<r.childNodes.length;p++){var q=r.childNodes[p];if(q.nodeName=="CODE"){return q}if(!(q.nodeType==3&&q.nodeValue.match(/\s+/))){break}}}function h(t,s){var p="";for(var r=0;r<t.childNodes.length;r++){if(t.childNodes[r].nodeType==3){var q=t.childNodes[r].nodeValue;if(s){q=q.replace(/\n/g,"")}p+=q}else{if(t.childNodes[r].nodeName=="BR"){p+="\n"}else{p+=h(t.childNodes[r])}}}if(/MSIE [678]/.test(navigator.userAgent)){p=p.replace(/\r/g,"\n")}return p}function a(s){var r=s.className.split(/\s+/);r=r.concat(s.parentNode.className.split(/\s+/));for(var q=0;q<r.length;q++){var p=r[q].replace(/^language-/,"");if(e[p]){return p}}}function c(q){var p=[];(function(s,t){for(var r=0;r<s.childNodes.length;r++){if(s.childNodes[r].nodeType==3){t+=s.childNodes[r].nodeValue.length}else{if(s.childNodes[r].nodeName=="BR"){t+=1}else{if(s.childNodes[r].nodeType==1){p.push({event:"start",offset:t,node:s.childNodes[r]});t=arguments.callee(s.childNodes[r],t);p.push({event:"stop",offset:t,node:s.childNodes[r]})}}}}return t})(q,0);return p}function k(y,w,x){var q=0;var z="";var s=[];function u(){if(y.length&&w.length){if(y[0].offset!=w[0].offset){return(y[0].offset<w[0].offset)?y:w}else{return w[0].event=="start"?y:w}}else{return y.length?y:w}}function t(D){var A="<"+D.nodeName.toLowerCase();for(var B=0;B<D.attributes.length;B++){var C=D.attributes[B];A+=" "+C.nodeName.toLowerCase();if(C.value!==undefined&&C.value!==false&&C.value!==null){A+='="'+m(C.value)+'"'}}return A+">"}while(y.length||w.length){var v=u().splice(0,1)[0];z+=m(x.substr(q,v.offset-q));q=v.offset;if(v.event=="start"){z+=t(v.node);s.push(v.node)}else{if(v.event=="stop"){var p,r=s.length;do{r--;p=s[r];z+=("</"+p.nodeName.toLowerCase()+">")}while(p!=v.node);s.splice(r,1);while(r<s.length){z+=t(s[r]);r++}}}}return z+m(x.substr(q))}function j(){function q(x,y,v){if(x.compiled){return}var u;var s=[];if(x.k){x.lR=f(y,x.l||hljs.IR,true);for(var w in x.k){if(!x.k.hasOwnProperty(w)){continue}if(x.k[w] instanceof Object){u=x.k[w]}else{u=x.k;w="keyword"}for(var r in u){if(!u.hasOwnProperty(r)){continue}x.k[r]=[w,u[r]];s.push(r)}}}if(!v){if(x.bWK){x.b="\\b("+s.join("|")+")\\s"}x.bR=f(y,x.b?x.b:"\\B|\\b");if(!x.e&&!x.eW){x.e="\\B|\\b"}if(x.e){x.eR=f(y,x.e)}}if(x.i){x.iR=f(y,x.i)}if(x.r===undefined){x.r=1}if(!x.c){x.c=[]}x.compiled=true;for(var t=0;t<x.c.length;t++){if(x.c[t]=="self"){x.c[t]=x}q(x.c[t],y,false)}if(x.starts){q(x.starts,y,false)}}for(var p in e){if(!e.hasOwnProperty(p)){continue}q(e[p].dM,e[p],true)}}function d(B,C){if(!j.called){j();j.called=true}function q(r,M){for(var L=0;L<M.c.length;L++){if((M.c[L].bR.exec(r)||[null])[0]==r){return M.c[L]}}}function v(L,r){if(D[L].e&&D[L].eR.test(r)){return 1}if(D[L].eW){var M=v(L-1,r);return M?M+1:0}return 0}function w(r,L){return L.i&&L.iR.test(r)}function K(N,O){var M=[];for(var L=0;L<N.c.length;L++){M.push(N.c[L].b)}var r=D.length-1;do{if(D[r].e){M.push(D[r].e)}r--}while(D[r+1].eW);if(N.i){M.push(N.i)}return f(O,M.join("|"),true)}function p(M,L){var N=D[D.length-1];if(!N.t){N.t=K(N,E)}N.t.lastIndex=L;var r=N.t.exec(M);return r?[M.substr(L,r.index-L),r[0],false]:[M.substr(L),"",true]}function z(N,r){var L=E.cI?r[0].toLowerCase():r[0];var M=N.k[L];if(M&&M instanceof Array){return M}return false}function F(L,P){L=m(L);if(!P.k){return L}var r="";var O=0;P.lR.lastIndex=0;var M=P.lR.exec(L);while(M){r+=L.substr(O,M.index-O);var N=z(P,M);if(N){x+=N[1];r+='<span class="'+N[0]+'">'+M[0]+"</span>"}else{r+=M[0]}O=P.lR.lastIndex;M=P.lR.exec(L)}return r+L.substr(O,L.length-O)}function J(L,M){if(M.sL&&e[M.sL]){var r=d(M.sL,L);x+=r.keyword_count;return r.value}else{return F(L,M)}}function I(M,r){var L=M.cN?'<span class="'+M.cN+'">':"";if(M.rB){y+=L;M.buffer=""}else{if(M.eB){y+=m(r)+L;M.buffer=""}else{y+=L;M.buffer=r}}D.push(M);A+=M.r}function G(N,M,Q){var R=D[D.length-1];if(Q){y+=J(R.buffer+N,R);return false}var P=q(M,R);if(P){y+=J(R.buffer+N,R);I(P,M);return P.rB}var L=v(D.length-1,M);if(L){var O=R.cN?"</span>":"";if(R.rE){y+=J(R.buffer+N,R)+O}else{if(R.eE){y+=J(R.buffer+N,R)+O+m(M)}else{y+=J(R.buffer+N+M,R)+O}}while(L>1){O=D[D.length-2].cN?"</span>":"";y+=O;L--;D.length--}var r=D[D.length-1];D.length--;D[D.length-1].buffer="";if(r.starts){I(r.starts,"")}return R.rE}if(w(M,R)){throw"Illegal"}}var E=e[B];var D=[E.dM];var A=0;var x=0;var y="";try{var s,u=0;E.dM.buffer="";do{s=p(C,u);var t=G(s[0],s[1],s[2]);u+=s[0].length;if(!t){u+=s[1].length}}while(!s[2]);if(D.length>1){throw"Illegal"}return{r:A,keyword_count:x,value:y}}catch(H){if(H=="Illegal"){return{r:0,keyword_count:0,value:m(C)}}else{throw H}}}function g(t){var p={keyword_count:0,r:0,value:m(t)};var r=p;for(var q in e){if(!e.hasOwnProperty(q)){continue}var s=d(q,t);s.language=q;if(s.keyword_count+s.r>r.keyword_count+r.r){r=s}if(s.keyword_count+s.r>p.keyword_count+p.r){r=p;p=s}}if(r.language){p.second_best=r}return p}function i(r,q,p){if(q){r=r.replace(/^((<[^>]+>|\t)+)/gm,function(t,w,v,u){return w.replace(/\t/g,q)})}if(p){r=r.replace(/\n/g,"<br>")}return r}function n(t,w,r){var x=h(t,r);var v=a(t);var y,s;if(v){y=d(v,x)}else{return}var q=c(t);if(q.length){s=document.createElement("pre");s.innerHTML=y.value;y.value=k(q,c(s),x)}y.value=i(y.value,w,r);var u=t.className;if(!u.match("(\\s|^)(language-)?"+v+"(\\s|$)")){u=u?(u+" "+v):v}if(/MSIE [678]/.test(navigator.userAgent)&&t.tagName=="CODE"&&t.parentNode.tagName=="PRE"){s=t.parentNode;var p=document.createElement("div");p.innerHTML="<pre><code>"+y.value+"</code></pre>";t=p.firstChild.firstChild;p.firstChild.cN=s.cN;s.parentNode.replaceChild(p.firstChild,s)}else{t.innerHTML=y.value}t.className=u;t.result={language:v,kw:y.keyword_count,re:y.r};if(y.second_best){t.second_best={language:y.second_best.language,kw:y.second_best.keyword_count,re:y.second_best.r}}}function o(){if(o.called){return}o.called=true;var r=document.getElementsByTagName("pre");for(var p=0;p<r.length;p++){var q=b(r[p]);if(q){n(q,hljs.tabReplace)}}}function l(){if(window.addEventListener){window.addEventListener("DOMContentLoaded",o,false);window.addEventListener("load",o,false)}else{if(window.attachEvent){window.attachEvent("onload",o)}else{window.onload=o}}}var e={};this.LANGUAGES=e;this.highlight=d;this.highlightAuto=g;this.fixMarkup=i;this.highlightBlock=n;this.initHighlighting=o;this.initHighlightingOnLoad=l;this.IR="[a-zA-Z][a-zA-Z0-9_]*";this.UIR="[a-zA-Z_][a-zA-Z0-9_]*";this.NR="\\b\\d+(\\.\\d+)?";this.CNR="\\b(0[xX][a-fA-F0-9]+|(\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)";this.BNR="\\b(0b[01]+)";this.RSR="!|!=|!==|%|%=|&|&&|&=|\\*|\\*=|\\+|\\+=|,|\\.|-|-=|/|/=|:|;|<|<<|<<=|<=|=|==|===|>|>=|>>|>>=|>>>|>>>=|\\?|\\[|\\{|\\(|\\^|\\^=|\\||\\|=|\\|\\||~";this.ER="(?![\\s\\S])";this.BE={b:"\\\\.",r:0};this.ASM={cN:"string",b:"'",e:"'",i:"\\n",c:[this.BE],r:0};this.QSM={cN:"string",b:'"',e:'"',i:"\\n",c:[this.BE],r:0};this.CLCM={cN:"comment",b:"//",e:"$"};this.CBLCLM={cN:"comment",b:"/\\*",e:"\\*/"};this.HCM={cN:"comment",b:"#",e:"$"};this.NM={cN:"number",b:this.NR,r:0};this.CNM={cN:"number",b:this.CNR,r:0};this.BNM={cN:"number",b:this.BNR,r:0};this.inherit=function(r,s){var p={};for(var q in r){p[q]=r[q]}if(s){for(var q in s){p[q]=s[q]}}return p}}();hljs.LANGUAGES.cpp=function(){var a={keyword:{"false":1,"int":1,"float":1,"while":1,"private":1,"char":1,"catch":1,"export":1,virtual:1,operator:2,sizeof:2,dynamic_cast:2,typedef:2,const_cast:2,"const":1,struct:1,"for":1,static_cast:2,union:1,namespace:1,unsigned:1,"long":1,"throw":1,"volatile":2,"static":1,"protected":1,bool:1,template:1,mutable:1,"if":1,"public":1,friend:2,"do":1,"return":1,"goto":1,auto:1,"void":2,"enum":1,"else":1,"break":1,"new":1,extern:1,using:1,"true":1,"class":1,asm:1,"case":1,typeid:1,"short":1,reinterpret_cast:2,"default":1,"double":1,register:1,explicit:1,signed:1,typename:1,"try":1,"this":1,"switch":1,"continue":1,wchar_t:1,inline:1,"delete":1,alignof:1,char16_t:1,char32_t:1,constexpr:1,decltype:1,noexcept:1,nullptr:1,static_assert:1,thread_local:1,restrict:1,_Bool:1,complex:1},built_in:{std:1,string:1,cin:1,cout:1,cerr:1,clog:1,stringstream:1,istringstream:1,ostringstream:1,auto_ptr:1,deque:1,list:1,queue:1,stack:1,vector:1,map:1,set:1,bitset:1,multiset:1,multimap:1,unordered_set:1,unordered_map:1,unordered_multiset:1,unordered_multimap:1,array:1,shared_ptr:1}};return{dM:{k:a,i:"</",c:[hljs.CLCM,hljs.CBLCLM,hljs.QSM,{cN:"string",b:"'\\\\?.",e:"'",i:"."},{cN:"number",b:"\\b(\\d+(\\.\\d*)?|\\.\\d+)(u|U|l|L|ul|UL|f|F)"},hljs.CNM,{cN:"preprocessor",b:"#",e:"$"},{cN:"stl_container",b:"\\b(deque|list|queue|stack|vector|map|set|bitset|multiset|multimap|unordered_map|unordered_set|unordered_multiset|unordered_multimap|array)\\s*<",e:">",k:a,r:10,c:["self"]}]}}}();hljs.LANGUAGES.r={dM:{c:[hljs.HCM,{cN:"number",b:"\\b0[xX][0-9a-fA-F]+[Li]?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+(?:[eE][+\\-]?\\d*)?L\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+\\.(?!\\d)(?:i\\b)?",e:hljs.IMMEDIATE_RE,r:1},{cN:"number",b:"\\b\\d+(?:\\.\\d*)?(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\.\\d+(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"keyword",b:"(?:tryCatch|library|setGeneric|setGroupGeneric)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\.",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\d+(?![\\w.])",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\b(?:function)",e:hljs.IMMEDIATE_RE,r:2},{cN:"keyword",b:"(?:if|in|break|next|repeat|else|for|return|switch|while|try|stop|warning|require|attach|detach|source|setMethod|setClass)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"literal",b:"(?:NA|NA_integer_|NA_real_|NA_character_|NA_complex_)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"literal",b:"(?:NULL|TRUE|FALSE|T|F|Inf|NaN)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"identifier",b:"[a-zA-Z.][a-zA-Z0-9._]*\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"<\\-(?!\\s*\\d)",e:hljs.IMMEDIATE_RE,r:2},{cN:"operator",b:"\\->|<\\-",e:hljs.IMMEDIATE_RE,r:1},{cN:"operator",b:"%%|~",e:hljs.IMMEDIATE_RE},{cN:"operator",b:">=|<=|==|!=|\\|\\||&&|=|\\+|\\-|\\*|/|\\^|>|<|!|&|\\||\\$|:",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"%",e:"%",i:"\\n",r:1},{cN:"identifier",b:"`",e:"`",r:0},{cN:"string",b:'"',e:'"',c:[hljs.BE],r:0},{cN:"string",b:"'",e:"'",c:[hljs.BE],r:0},{cN:"paren",b:"[[({\\])}]",e:hljs.IMMEDIATE_RE,r:0}]}};
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 13px;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  padding: 1em;
+  line-height: 20px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 {
+   font-size:2.2em;
+}
+
+h2 {
+   font-size:1.8em;
+}
+
+h3 {
+   font-size:1.4em;
+}
+
+h4 {
+   font-size:1.0em;
+}
+
+h5 {
+   font-size:0.9em;
+}
+
+h6 {
+   font-size:0.8em;
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre, img {
+  max-width: 100%;
+}
+pre {
+  overflow-x: auto;
+}
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code {
+  font-size: 92%;
+  border: 1px solid #ccc;
+}
+
+code[class] {
+  background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * {
+      background: transparent !important;
+      color: black !important;
+      filter:none !important;
+      -ms-filter: none !important;
+   }
+
+   body {
+      font-size:12pt;
+      max-width:100%;
+   }
+
+   a, a:visited {
+      text-decoration: underline;
+   }
+
+   hr {
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote {
+      padding-right: 1em;
+      page-break-inside: avoid;
+   }
+
+   tr, img {
+      page-break-inside: avoid;
+   }
+
+   img {
+      max-width: 100% !important;
+   }
+
+   @page :left {
+      margin: 15mm 20mm 15mm 10mm;
+   }
+
+   @page :right {
+      margin: 15mm 10mm 15mm 20mm;
+   }
+
+   p, h2, h3 {
+      orphans: 3; widows: 3;
+   }
+
+   h2, h3 {
+      page-break-after: avoid;
+   }
+}
+</style>
+
+
+
+</head>
+
+<body>
+<h1>Vertica.dplyr</h1>
+
+<p>Vertica.dplyR is an R package developed by HP that provides Vertica-backend support for the <a href="http://cran.r-project.org/web/packages/dplyr/index.html">dplyr</a> package. Besides support of standard dplyr functionality (such as table manipulation), vertica.dplyr also features: </p>
+
+<ul>
+<li><a href="http://www.vertica.com/wp-content/uploads/2014/06/HPdata-Manual.pdf">HPdata</a>-style functions (data transport from Vertica to Distributed R via the data loader), namely tbl2d<strong>object</strong> (where <strong>object</strong> is either <strong>array</strong> or <strong>frame</strong>), that are compatible with dplyr tbl objects.</li>
+<li>Easy CSV-loading into Vertica.</li>
+<li>copy_to functionality that takes advantage of Vertica&#39;s fast <strong>COPY LOCAL</strong> feature.</li>
+<li>Connectivity to Vertica through either JDBC <strong>OR</strong> ODBC.</li>
+<li>(Future Feature) Seamless Vertica UDx invocation.</li>
+</ul>
+
+<p>If you are already familiar with what dplyr is and what it can do, you should skip the background description below.</p>
+
+<h2>Background</h2>
+
+<p>In the Vertica-R-DistributedR data-science package, one of the recurring user stories involves the ability of the R-proficient data scientist to have full and easy access to data and functionality that are in-database, and doing so from within the familiar environment of R.</p>
+
+<p>Though several packages exist that allow the user to make a database connection and issue SQL statements from within the R console, many users are not comfortable with database syntax and lingo. In other cases, the user is indeed proficient in both R and SQL, but simply does not want to expend the effort to switch back and forth between these modes of instruction, because to do that is (as dplyr-author Hadley Wickham noted) &ldquo;cognitively challenging&rdquo;.</p>
+
+<p>Fortunately, there is a package in R that addresses this very common scenario. Developed by RStudio member and statistician Hadley Wickham, it is called <a href="http://cran.r-project.org/web/packages/dplyr/index.html">dplyr</a>.  </p>
+
+<h3>What is dplyr?</h3>
+
+<p><em>Disclosure: This is just a brief introduction that will not do justice to the full extent of what dplyr can do. To learn more, please read the <a href="http://cran.rstudio.com/web/packages/dplyr/vignettes/introduction.html">dplyr vignette</a>.</em></p>
+
+<p>The tool offers convenient methods of manipulating data frames, which can be analogized to tables in a database. Common actions in dplyr include what are known as the &ldquo;verbs&rdquo; of the package.</p>
+
+<p>For single data.frames (or tables):</p>
+
+<ul>
+<li><strong>filter</strong>
+
+<ul>
+<li>Filters tables by rows matching certain criteria (e.g., filter(table,col1 &gt; 5, col2 ==3))<br/></li>
+<li>Equivalent to (SELECT &hellip; from table WHERE &hellip;) </li>
+</ul></li>
+<li><strong>arrange</strong>
+
+<ul>
+<li>Orders rows (e.g., arrange(tbl,desc(col1)))</li>
+</ul></li>
+<li><strong>select</strong>
+
+<ul>
+<li>Selects columns (e.g., select(tbl,&#39;col1&#39;,&#39;col2&#39;))</li>
+</ul></li>
+<li><strong>mutate</strong>
+
+<ul>
+<li>Create new columns (e.g., mutate(tbl,new_col1=col3/col2,new_col2=fun(col4,col5)))</li>
+</ul></li>
+<li><strong>summarise</strong> (or <strong>summarize</strong>)
+
+<ul>
+<li>Collapses rows belonging to a certain group into a single one (e.g., for aggregations)</li>
+<li>Analogous to GROUP BY</li>
+</ul></li>
+</ul>
+
+<p>There are also verbs for multiple tables, such as (whose functions are mostly self-explanatory) left_join(), inner_join(), semi_join(), anti_join(), union(), intersect().</p>
+
+<h3>Vertica Integration</h3>
+
+<p>For data that are resident in a database, dplyr provides a convenient interface to access tables and manipulate them directly inside the database as though they were local data frames. Wickham has provided (natively, within the dplyr package itself) support for MySQL, Postgres, BigQuery, and SQLite backends. Vertica.dplyr enables dplyr to work with Vertica.</p>
+
+<p>Since its inception, the package&#39;s scope has grown to be more than just small wrappers to get Vertica to work with standard dplyr functionality. Taken to maturity, Vertica.dplyr will not only add dplyr-support for Vertica, but also serve as the basic &ldquo;intermediary&rdquo; between R (and indeed, Distributed R) and Vertica, which will include data preparation, data transfer, and Vertica-function invocation (including UDxes in a future release). </p>
+
+<h2>Obtaining the Package</h2>
+
+<p>You can obtain vertica.dplyr from <a href="https://github.com/vertica/vertica.dplyr">Github</a>, and in the future, from CRAN.</p>
+
+<h3>Prerequisites</h3>
+
+<p>At present, vertica.dplyr has 2 hard dependencies: <a href="http://cran.r-project.org/web/packages/assertthat/index.html">assertthat</a> and <a href="http://cran.r-project.org/web/packages/dplyr/index.html">dplyr</a>. There are additional <strong>soft</strong> dependencies on <a href="https://github.com/vertica/DistributedR/tree/master/vRODBC">vRODBC</a>, <a href="http://cran.r-project.org/web/packages/RJDBC/index.html">RJDBC</a>, and <a href="http://www.vertica.com/wp-content/uploads/2014/06/HPdata-Manual.pdf">HPdata</a>.</p>
+
+<p><strong>Soft</strong> means that there is no enforcement of having these packages installed on the user&#39;s system to install vertica.dplyr. However, to use vertica.dplyr, at least one of <strong>RJDBC</strong> or <strong>vRODBC</strong> must be installed and configured. These <strong>soft</strong> dependencies will be loaded (at which point it will be required to have the package installed) when their specific functionality is invoked. For example, when creating a vertica.dplyr connection to Vertica with ODBC, vertica.dplyr will check to make sure that <strong>vRODBC</strong> is installed and loadable. If it isn&#39;t, it will throw an error.</p>
+
+<p>You will also need access to a Vertica database (must be configured separately), as well as either (or both) the ODBC or JDBC Vertica driver(s) installed and configured on your host machine (the one that will run vertica.dplyr). Please refer to external documentation for help with these steps.</p>
+
+<h1>Using Vertica.dplyr</h1>
+
+<p>Let&#39;s now walk through a simple example to illustrate some of the fundamental data manipulation features of vertica.dplyr (and dplyr). </p>
+
+<p>First, load the package in R:</p>
+
+<pre><code class="r"># Load the vertica.dplyr package, which loads dplyr as a dependency
+library(vertica.dplyr)
+</code></pre>
+
+<p>Note that a few of the imported dplyr functions will have names that overwrite their R-base equivalents.</p>
+
+<h2>Connect to Vertica</h2>
+
+<p>First, you will need to connect to Vertica using the <code>src_vertica</code> function. There are two ways to do this:</p>
+
+<h3>Via ODBC (requires <strong>vRODBC</strong>):</h3>
+
+<pre><code class="r"># Connect to Vertica using vRODBC
+vertica_odbc &lt;- src_vertica(&quot;VerticaDSN&quot;)
+</code></pre>
+
+<h3>Via JDBC (requires <strong>RJDBC</strong>):</h3>
+
+<pre><code class="r"># Connect to Vertica using RJDBC
+vertica_jdbc &lt;- src_vertica(dsn = NULL, jdbcpath=&quot;/opt/vertica/java/lib/vertica_jdbc.jar&quot;,&quot;foobar&quot;,&quot;localhost&quot;,5433,&quot;dbadmin&quot;)
+</code></pre>
+
+<p>Here, I am connecting to a local Vertica DB instance named &ldquo;foobar&rdquo; that is listening on port 5433, with db-owner username &ldquo;dbadmin&rdquo;, and no password. Notice that the ODBC version is much more terse, because all of the configuration details are settled inside of ODBC.ini on the system, and I only need to provide the DSN. Note that if <code>dsn</code> is NULL, it is assumed that JDBC is to be used.</p>
+
+<p>Both <code>vertica_jdbc</code> and <code>vertica_odbc</code> are <code>src_vertica</code> objects, and vertica.dplyr functionality will work on both object types interchangeably. From the user-experience perspective, the only differences are how the package prints some metadata when you look at these objects, </p>
+
+<pre><code class="r"># show differences
+vertica_odbc
+</code></pre>
+
+<pre><code>## src:  Vertica ODBC Connection
+## -----+DSN: VerticaDSN
+## -----+Host: 127.0.0.1
+## -----+DB Version: 07.01.0001
+## -----+ODBC Version: 03.52
+## tbls: AllstarFull, Appearances, AwardsManagers, AwardsPlayers,
+##   AwardsShareManagers, AwardsSharePlayers, BattingPost,
+##   compute_test_table, d1, d2, Fielding, FieldingOF, FieldingPost,
+##   HallOfFame, LahmanData, Managers, ManagersHalf, Master, Pitching,
+##   PitchingPost, ref_join, Salaries, Schools, SchoolsPlayers, SeriesPost,
+##   Teams, TeamsFranchises, TeamsHalf, temp
+</code></pre>
+
+<pre><code class="r">vertica_jdbc
+</code></pre>
+
+<pre><code>## src:  Vertica JDBC Connection [dbadmin@localhost:5433/foobar]
+## tbls: AllstarFull, Appearances, AwardsManagers, AwardsPlayers,
+##   AwardsShareManagers, AwardsSharePlayers, BattingPost,
+##   compute_test_table, d1, d2, Fielding, FieldingOF, FieldingPost,
+##   HallOfFame, LahmanData, Managers, ManagersHalf, Master, Pitching,
+##   PitchingPost, ref_join, Salaries, Schools, SchoolsPlayers, SeriesPost,
+##   Teams, TeamsFranchises, TeamsHalf, temp
+</code></pre>
+
+<p>as well as whether or not <code>dsn</code> is required as a parameter for <code>tbl2dframe</code> and <code>tbl2darray</code> (described in a later section).</p>
+
+<p>As you can see, both of them print information about the connection and list the current user tables (and views) found in the database. For the rest of this tutorial, let&#39;s just use the ODBC version and call it <code>vertica</code>:</p>
+
+<pre><code class="r">vertica &lt;- vertica_odbc
+class(vertica)
+</code></pre>
+
+<pre><code>## [1] &quot;src_vertica&quot; &quot;src_sql&quot;     &quot;src&quot;
+</code></pre>
+
+<h2>Vertica.dplyr &ldquo;tables&rdquo; (tbl_vertica)</h2>
+
+<p>Before we can walk through the example, we must understand what a &ldquo;tbl&rdquo; is. Some basic principles:</p>
+
+<ul>
+<li><p>The basic dplyr object is the &ldquo;tbl&rdquo; (or in this case, tbl_vertica). This is a reference to SQL, some not-yet executed query that will result in a new table.</p></li>
+<li><p>Conceptually, a &ldquo;tbl_vertica&rdquo; object is nothing more than a wrapper object that contains a SQL query, a connection to a DB, and related internal metadata. These tables behave in the same manner as data.frames would when used in dplyr, except now they are actually meant to be executed in database.</p></li>
+<li><p>Most operations (excluding those that convert tbls to data.frames, or saves them to tables/view in Vertica, or converts them to dobjects in Distributed R) performed on a tbl will result in another tbl. Essentially, you can chain these operations together, meaning that the SQL statement builds up in complexity.</p></li>
+<li><p>Tbl objects are lazily executed on the DB; that is, when you do not require the results (e.g., moving the results to R, or looking at the data by printing the results in R), nothing is executed in Vertica.</p></li>
+</ul>
+
+<h2>Retrieving a tbl reference</h2>
+
+<p>One way to get started with a tbl_vertica object is to directly access an existing table. For example, we could get access to the &ldquo;Salaries&rdquo; table listed above in the printout of our src_vertica objects. To do this, we use the <code>tbl</code> function on our <code>src_vertica</code> object.</p>
+
+<pre><code class="r">salaries &lt;- tbl(vertica,&quot;Salaries&quot;)
+</code></pre>
+
+<p><code>salaries</code> now contains a simple select statement on &ldquo;Salaries&rdquo; in Vertica. You can examine the SQL query associated with a <code>tbl_vertica</code> by accessing the <code>query</code> member of the object:</p>
+
+<pre><code class="r">salaries$query
+</code></pre>
+
+<pre><code>## &lt;Query&gt; SELECT &quot;yearID&quot;, &quot;teamID&quot;, &quot;lgID&quot;, &quot;playerID&quot;, &quot;salary&quot;
+## FROM &quot;Salaries&quot;
+## An object of class &quot;VerticaConnection&quot;
+## Slot &quot;conn&quot;:
+## vRODBC Connection 5
+## Details:
+##   case=nochange
+##   DSN=VerticaDSN
+## 
+## Slot &quot;type&quot;:
+## [1] &quot;ODBC&quot;
+</code></pre>
+
+<p>Note that as mentioned before, nothing is yet executed in DB! If we would like to take a &#39;peek&#39; at what the data look like, we could ask R to print <code>salaries</code>.</p>
+
+<pre><code class="r">salaries
+</code></pre>
+
+<pre><code>## Source: Vertica ODBC Connection
+## -----+DSN: VerticaDSN
+## -----+Host: 127.0.0.1
+## -----+DB Version: 07.01.0001
+## -----+ODBC Version: 03.52
+## From: Salaries [23,956 x 5]
+## 
+##    yearID teamID lgID  playerID salary
+## 1    1985    ATL   NL barkele01 870000
+## 2    1985    ATL   NL bedrost01 550000
+## 3    1985    ATL   NL benedbr01 545000
+## 4    1985    ATL   NL  campri01 633333
+## 5    1985    ATL   NL ceronri01 625000
+## 6    1985    ATL   NL chambch01 800000
+## 7    1985    ATL   NL dedmoje01 150000
+## 8    1985    ATL   NL forstte01 483333
+## 9    1985    ATL   NL garbege01 772000
+## 10   1985    ATL   NL harpete01 250000
+## ..    ...    ...  ...       ...    ...
+</code></pre>
+
+<p>Now the query is actually executed in the database, and the first few rows can be seen in the result (dplyr automatically takes the HEAD and displays it).</p>
+
+<p>Accessing data already in database is the presumed primary use-case. Another way to start our workflow (which is what we will use in the example in the following few sections) is to start with data in R and copy it to Vertica using <code>copy_to</code> (you can also start from a CSV file and load it into Vertica using <code>db_load_from_file</code>).</p>
+
+<p>We start with data from all NYC flights in the year 2013, which we&#39;ll get from the R package <a href="http://cran.r-project.org/web/packages/nycflights13/index.html"><code>nycflights13</code></a> (also maintained by Hadley Wickham). Importing the library imports an R data.frame, <code>flights</code>.</p>
+
+<pre><code class="r">library(nycflights13)
+# Peek at data.frame `flights`
+head(flights,10)
+</code></pre>
+
+<pre><code>## Source: local data frame [10 x 16]
+## 
+##    year month day dep_time dep_delay arr_time arr_delay carrier tailnum
+## 1  2013     1   1      517         2      830        11      UA  N14228
+## 2  2013     1   1      533         4      850        20      UA  N24211
+## 3  2013     1   1      542         2      923        33      AA  N619AA
+## 4  2013     1   1      544        -1     1004       -18      B6  N804JB
+## 5  2013     1   1      554        -6      812       -25      DL  N668DN
+## 6  2013     1   1      554        -4      740        12      UA  N39463
+## 7  2013     1   1      555        -5      913        19      B6  N516JB
+## 8  2013     1   1      557        -3      709       -14      EV  N829AS
+## 9  2013     1   1      557        -3      838        -8      B6  N593JB
+## 10 2013     1   1      558        -2      753         8      AA  N3ALAA
+## Variables not shown: flight (int), origin (chr), dest (chr), air_time
+##   (dbl), distance (dbl), hour (dbl), minute (dbl)
+</code></pre>
+
+<pre><code class="r">nrow(flights)
+</code></pre>
+
+<pre><code>## [1] 336776
+</code></pre>
+
+<p>Now let&#39;s copy it over to Vertica using <code>copy_to</code> and see what we get:</p>
+
+<pre><code class="r">flights_vertica &lt;- copy_to(vertica,flights,&quot;flights&quot;)
+flights_vertica
+</code></pre>
+
+<pre><code>## Source: Vertica ODBC Connection
+## -----+DSN: VerticaDSN
+## -----+Host: 127.0.0.1
+## -----+DB Version: 07.01.0001
+## -----+ODBC Version: 03.52
+## From: flights [336,776 x 16]
+## 
+##    year month day dep_time dep_delay arr_time arr_delay carrier tailnum
+## 1  2013     1   1      517         2      830        11      UA  N14228
+## 2  2013     1   1      533         4      850        20      UA  N24211
+## 3  2013     1   1      542         2      923        33      AA  N619AA
+## 4  2013     1   1      544        -1     1004       -18      B6  N804JB
+## 5  2013     1   1      554        -6      812       -25      DL  N668DN
+## 6  2013     1   1      554        -4      740        12      UA  N39463
+## 7  2013     1   1      555        -5      913        19      B6  N516JB
+## 8  2013     1   1      557        -3      709       -14      EV  N829AS
+## 9  2013     1   1      557        -3      838        -8      B6  N593JB
+## 10 2013     1   1      558        -2      753         8      AA  N3ALAA
+## ..  ...   ... ...      ...       ...      ...       ...     ...     ...
+## Variables not shown: flight (dbl), origin (chr), dest (chr), air_time
+##   (dbl), distance (dbl), hour (dbl), minute (dbl)
+</code></pre>
+
+<p><code>copy_to</code> has automatically extracted the data types in the data.frame, converted them to a schema in Vertica, created the table in Vertica, and copied it over to the DB. It returns another tbl_vertica object, which we have named <code>flights_vertica</code>.</p>
+
+<h2>Small &ldquo;data-prep&rdquo; example using our flights data</h2>
+
+<p>As one of the most densely populated regions in the United States, the New York metropolitan area is serviced by three major airports: JFK, Newark (EWR), and LaGuardia (LGA). Delays in flights are unavoidable, but do any of these airports have an edge over the others? How is flight delay affected by the time of year?</p>
+
+<p>To help me answer these inquiries, we may conduct a simple statistical analysis of the flight records in the year 2013.</p>
+
+<p>Examining the <code>flights_vertica</code> table, we see that it has labeled each flight by (among other things) some values such as date, departure/arrival times, and distance. </p>
+
+<h3>Select: Select columns from a table.</h3>
+
+<p>The most straightforward and basic operation is the <strong><em>select</em></strong> function. When connected to a database, this will issue a corresponding SQL <code>SELECT</code> on the specified table, with the specified columns.</p>
+
+<p>In our case, since we are only analyzing flight delay, the airports, and how these correspond to the dates (year is included but it&#39;s all 2013 so we&#39;ll discard the year column as well), we can simply select only those columns for now:</p>
+
+<pre><code class="r"># Select columns month, day, arr_delay, and origin
+q1 &lt;- select(flights_vertica, month, day, origin, arr_delay)
+q1
+</code></pre>
+
+<pre><code>## Source: Vertica ODBC Connection
+## -----+DSN: VerticaDSN
+## -----+Host: 127.0.0.1
+## -----+DB Version: 07.01.0001
+## -----+ODBC Version: 03.52
+## From: flights [336,776 x 4]
+## 
+##    month day origin arr_delay
+## 1      1   1    EWR        11
+## 2      1   1    LGA        20
+## 3      1   1    JFK        33
+## 4      1   1    JFK       -18
+## 5      1   1    LGA       -25
+## 6      1   1    EWR        12
+## 7      1   1    EWR        19
+## 8      1   1    LGA       -14
+## 9      1   1    JFK        -8
+## 10     1   1    LGA         8
+## ..   ... ...    ...       ...
+</code></pre>
+
+<h3>Filter: Select rows matching provided criteria</h3>
+
+<p>To answer the first question (determining which airport has the worst delays), I want to examine only the flights that occur between the months of February and November. During the holiday season (which I&#39;m approximating to the months of December and January), delays may be influenced by the increase in traveling, and such data may unfairly bias our result.</p>
+
+<p>Since the <code>select</code> operation from before returned another dplyr tbl object, I can chain what I did there with the following <code>filter</code> operation by passing in <code>q1</code> as its first argument.</p>
+
+<pre><code class="r"># Filter out flights in January and December
+q2 &lt;- filter(q1, year == 2013, month &gt; 1, month &lt; 12)
+q2
+</code></pre>
+
+<pre><code>## Source: Vertica ODBC Connection
+## -----+DSN: VerticaDSN
+## -----+Host: 127.0.0.1
+## -----+DB Version: 07.01.0001
+## -----+ODBC Version: 03.52
+## From: flights [281,637 x 4]
+## Filter: year == 2013, month &gt; 1, month &lt; 12 
+## 
+##    month day origin arr_delay
+## 1      2   1    LGA        NA
+## 2      2   1    EWR        NA
+## 3      2   1    EWR        NA
+## 4      2   1    EWR        NA
+## 5      2   1    EWR        NA
+## 6      2   1    EWR        NA
+## 7      2   1    EWR        NA
+## 8      2   1    EWR        NA
+## 9      2   1    EWR        NA
+## 10     2   1    EWR        NA
+## ..   ... ...    ...       ...
+</code></pre>
+
+<p>The data now printed out show flights beginning with the first of February. Just as when we retrieved a reference to a Vertica table, we can view the query associated with this filter operation:</p>
+
+<pre><code class="r"># Look at what we did in terms of SQL
+q2$query
+</code></pre>
+
+<pre><code>## &lt;Query&gt; SELECT &quot;month&quot; AS &quot;month&quot;, &quot;day&quot; AS &quot;day&quot;, &quot;origin&quot; AS &quot;origin&quot;, &quot;arr_delay&quot; AS &quot;arr_delay&quot;
+## FROM &quot;flights&quot;
+## WHERE &quot;year&quot; = 2013.0 AND &quot;month&quot; &gt; 1.0 AND &quot;month&quot; &lt; 12.0
+## An object of class &quot;VerticaConnection&quot;
+## Slot &quot;conn&quot;:
+## vRODBC Connection 5
+## Details:
+##   case=nochange
+##   DSN=VerticaDSN
+## 
+## Slot &quot;type&quot;:
+## [1] &quot;ODBC&quot;
+</code></pre>
+
+<p>As you might have expected, the query resulting from a <strong>filter</strong> involved a <code>WHERE</code> clause.</p>
+
+<p>You may notice that <code>arr_delay</code> has NA values for many rows, which are NULL in Vertica. We&#39;ll want to get rid of these rows with incomplete data using another <code>filter</code> operation on <code>q2</code>:</p>
+
+<pre><code class="r"># Filter out NA rows
+q3 &lt;- filter(q2,!is.na(arr_delay))
+q3
+</code></pre>
+
+<pre><code>## Source: Vertica ODBC Connection
+## -----+DSN: VerticaDSN
+## -----+Host: 127.0.0.1
+## -----+DB Version: 07.01.0001
+## -----+ODBC Version: 03.52
+## From: flights [273,928 x 4]
+## Filter: year == 2013, month &gt; 1, month &lt; 12, !is.na(arr_delay) 
+## 
+##    month day origin arr_delay
+## 1      2   1    EWR         4
+## 2      2   1    EWR        -4
+## 3      2   1    LGA         8
+## 4      2   1    JFK       -10
+## 5      2   1    JFK         9
+## 6      2   1    EWR       -14
+## 7      2   1    JFK        -1
+## 8      2   1    LGA         9
+## 9      2   1    LGA         0
+## 10     2   1    LGA        -4
+## ..   ... ...    ...       ...
+</code></pre>
+
+<p>We do not have NA values anymore. dplyr has converted our R-style boolean expression on <code>arr_delay</code> for <code>NA</code> values into <code>NOT NULL</code> in SQL.</p>
+
+<h3>Summarise, group_by, and arrange: GROUP BY airports and ORDER them by average delay</h3>
+
+<p>Now for the fun part. Our data have been cleaned up a bit, and we want to see which airport had the worst delays going out of NYC in 2013, between the months of February and December.</p>
+
+<p>Astute SQL experts will recognize that these operations correspond to running AVG and GROUP BY operations on these columns. Of course, we&#39;ll want to use the dplyr equivalent.</p>
+
+<p>The first thing to use is <code>group_by</code>, which constructs the grouping clause, followed by a summarise (which takes a group_by clause as its first argument) to generate our report. Along with our report, we would also like to create new columns for determining the number of flights belonging to each airport (we&#39;ll call this <code>count</code>), as well as the average delay for that airport (called delay).</p>
+
+<pre><code class="r"># Group by airport (origin)
+by_origin &lt;- group_by(q3, origin)
+q4 &lt;- summarise(by_origin, 
+   count = n(),
+   delay = mean(arr_delay)
+)
+</code></pre>
+
+<p>The <code>summarise</code> function has allowed me to create two new columns, <code>count</code> and <code>delay</code> as functions of the <code>GROUP BY origin</code> created by <code>group_by</code>, which I stored as <code>by_origin</code>.
+The arguments on the right-hand side, <code>n</code> and <code>mean</code>, correspond to the vertica.dplyr bindings of the Vertica analytic functions I am invoking (<strong>COUNT(*)</strong> and <strong>AVG(arr_delay)</strong>).</p>
+
+<p>Before I look at the result, let&#39;s finally rank these airports by worst (most delay) to best using <code>arrange</code>:</p>
+
+<pre><code class="r"># Average delays by airport 
+q5 &lt;- arrange(q4,desc(delay))
+q5
+</code></pre>
+
+<pre><code>## Source: Vertica ODBC Connection
+## -----+DSN: VerticaDSN
+## -----+Host: 127.0.0.1
+## -----+DB Version: 07.01.0001
+## -----+ODBC Version: 03.52
+## From: &lt;derived table&gt; [?? x 3]
+## Arrange: desc(delay) 
+## 
+##    origin count    delay
+## 1     EWR 98101 7.733132
+## 2     LGA 84702 5.370121
+## 3     JFK 91125 5.268258
+## ..    ...   ...      ...
+</code></pre>
+
+<p>Pretty interesting stuff. From these results we see that, compared to other airports servicing the NYC region, EWR (Newark) had, by roughly two-and-a-half minutes, the worst average arrival delay in 2013.</p>
+
+<h3>Lazy execution</h3>
+
+<p>Now let&#39;s look again at the query by accessing <code>$query</code> of a <code>tbl</code> object. We&#39;ll do it on our <code>q5</code> variable.</p>
+
+<pre><code class="r">q5$query
+</code></pre>
+
+<pre><code>## &lt;Query&gt; SELECT &quot;origin&quot;, &quot;count&quot;, &quot;delay&quot;
+## FROM (SELECT &quot;origin&quot;, count(*) AS &quot;count&quot;, AVG(&quot;arr_delay&quot;) AS &quot;delay&quot;
+## FROM &quot;flights&quot;
+## WHERE &quot;year&quot; = 2013.0 AND &quot;month&quot; &gt; 1.0 AND &quot;month&quot; &lt; 12.0 AND NOT(&quot;arr_delay&quot;IS NULL)
+## GROUP BY &quot;origin&quot;) AS &quot;_W7&quot;
+## ORDER BY &quot;delay&quot; DESC
+## An object of class &quot;VerticaConnection&quot;
+## Slot &quot;conn&quot;:
+## vRODBC Connection 5
+## Details:
+##   case=nochange
+##   DSN=VerticaDSN
+## 
+## Slot &quot;type&quot;:
+## [1] &quot;ODBC&quot;
+</code></pre>
+
+<p>Note that this query is a complex query that has been built off of our initial tbl created by our <code>copy_to</code> statement since before we even started our data prep. What this means is that if I hadn&#39;t been printing all of the intermediate results in console, <em>nothing from q1 through q5 would have even touched the DB</em>.</p>
+
+<h3>Collect: Bringing it back to R</h3>
+
+<p>What happens if I want to bring this back into the R console? Very easy, as it turns out, with <code>collect</code>. <code>collect</code> takes the saved query, executes it on the database, and brings the results back into R as the familiar data.frame.</p>
+
+<pre><code class="r"># Bring results back into R as a data.frame, then plot the results
+airport_delays &lt;- collect(q5)
+barplot(airport_delays[[&quot;delay&quot;]],horiz=TRUE,
+      names.arg=airport_delays[[&quot;origin&quot;]],
+     xlab=&quot;Average delay in minutes&quot;,ylab=&quot;Airport&quot;)
+</code></pre>
+
+<p><img src="data:image/png;base64,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" alt="plot of chunk collect"/> </p>
+
+<h2>Calling Vertica Functions</h2>
+
+<p>In the previous sections, we saw the use of AVG (called as mean()) in dplyr) as well as COUNT(*) (invoked with n() in dplyr) with the <code>summarise</code> function. 
+In this section, we&#39;ll cover in more formal detail how Vertica functions can be invoked, namely window and aggregate functions, on different partitions of data. </p>
+
+<p>Note that a complete list of currently supported functions may be found at the end of this document.</p>
+
+<p>In general, a function can be invoked by simply dropping it into any <code>mutate</code> or <code>summarise</code> statement. <code>mutate</code> adds an entire column to your tbl, so use it when you expect to get a vector of results back from your function, i.e., when invoking a window function, whereas <code>summarise</code> collapses all rows (belonging to a group) into one (therefore, if no <code>group_by</code> is used, your function will run on all rows of your table).  </p>
+
+<h3>Aggregate Functions</h3>
+
+<p>An aggregate function needs to be invoked with <code>summarise</code>, which necessitates the complementary use of <code>group_by</code> to specify the groups on which to aggregate. If it is not used with any <code>group_by</code> result, the function will run on the entire table, leaving you with only one result.</p>
+
+<p>More generally, if you have a function <code>foo</code> that you wish to run on attribute <code>attr</code> in <code>tbl</code>, grouping by column <code>col</code>, with additional arguments <code>args</code> you would run:</p>
+
+<pre><code class="r">grouped_by_col &lt;- group_by(tbl,col)
+result &lt;- summarise(grouped_by_col,new_col = foo(attr,args))
+</code></pre>
+
+<p>Occasionally, the function may not take the <code>attr</code> argument, or any arguments at all (such as COUNT(*)). In this case, no args need to be passed, e.g., <code>new_col = n()</code> for <code>COUNT(*)</code>.</p>
+
+<p>Notice that a new column will be created named <code>new_col</code>. This can be done using <code>mutate</code> as well.</p>
+
+<h3>Window Functions</h3>
+
+<p>Currently, the <strong>PARTITION BY</strong> SQL statement is also constructed by <code>group_by</code>. This means that for window functions requiring such a clause (which is most), it is recommended to run a <code>group_by</code> on the column you wish to partition by (although, as will be described later, this can be overridden using the <code>partition</code> parameter).</p>
+
+<p>In addition to this, many window functions also have some notion of a <em>&ldquo;window&rdquo;</em> of a specified width over which the function is applied. Vertica is also special in that many of them (even those that do not require explicit ordering) require an obligatory ORDER BY clause when they are invoked.</p>
+
+<p>For this reason, the syntax for running a window function on Vertica through dplyr is unique to vertica.dplyr.  </p>
+
+<p>In standard dplyr syntax, what is needed is a <code>group_by</code> call followed by a <code>mutate</code> or <code>filter</code>. If you wish to run a window function <code>winfun</code> on column <code>col</code> of table <code>tbl</code>, partitioning by <code>partcol</code>, you would invoke it in the following manner:</p>
+
+<pre><code class="r">grouped_by_partcol &lt;- group_by(tbl,partcol)
+mutate(grouped_by_partcol, new_col = winfun(col,args))
+</code></pre>
+
+<p>You may notice that this does not enforce any particular ordering nor windowing range on the function. Because most Vertica functions require the <strong>ORDER BY</strong> statement, in vertica.dplyr there is a convenient way to make this happen in your invocation of the window function, using the <code>order</code> argument.</p>
+
+<p>Similarly, for convenience, you can specify your window size using <code>range</code>. This is usually an optional argument (leaving this alone will attempt to run the function with no window size specified), but it is useful when it is needed.</p>
+
+<p>Using both of these arguments, with the assumption that we want to have the range between <code>min</code> and <code>max</code>, ordering by <code>ordercol</code>, the above flow is converted to the following in vertica.dplyr:</p>
+
+<pre><code class="r">grouped_by_partcol &lt;- group_by(tbl,partcol)
+mutate(grouped_by_partcol, new_col = winfun(col,args,range=c(min,max),order=ordercol))
+</code></pre>
+
+<p>The following will also have the same effect, since <code>partition</code> will also allow you to specify partitioning:</p>
+
+<pre><code class="r">mutate(tbl, new_col = winfun(col,args,range=c(min,max),partition=partcol,order=ordercol))
+</code></pre>
+
+<p>Note that the range is specified as an R vector. <code>-Inf</code> is converted to <code>ROWS UNBOUNDED PRECEDING</code>, <code>Inf</code> is converted to <code>ROWS UNBOUNDED FOLLOWING</code>. </p>
+
+<h4>Hands-on Example</h4>
+
+<p>Let us return to our flights example, and grab our query <code>q1</code>. This time, we want to find out how delays changed over the calendar year. Let&#39;s conceive of a flow to achieve this:</p>
+
+<ol>
+<li>Remove unnecessary columns and NULL values</li>
+<li>Average all delays for every unique calendar day</li>
+<li>To get a more &ldquo;smoothed&rdquo; result, run another average function over these delay values, with a running window width of 10 days (5 days prior to the current row, and 5 days after).</li>
+</ol>
+
+<pre><code class="r">c &lt;- filter(select(q1,month,day,arr_delay),!is.na(arr_delay))
+calendar_day &lt;- group_by(c,month,day)
+delay_by_day &lt;- summarise(calendar_day,avg_delay = mean(arr_delay))
+delays &lt;- mutate(delay_by_day, delay_smoothed = mean(avg_delay,range=c(-5,5),
+partition=NULL,order=c(month,day)))
+delays
+</code></pre>
+
+<pre><code>## Source: Vertica ODBC Connection
+## -----+DSN: VerticaDSN
+## -----+Host: 127.0.0.1
+## -----+DB Version: 07.01.0001
+## -----+ODBC Version: 03.52
+## From: &lt;derived table&gt; [?? x 4]
+## Grouped by: month 
+## 
+##    month day  avg_delay delay_smoothed
+## 1      1   1 12.6510229      5.3091754
+## 2      1   2 12.6928879      3.8439629
+## 3      1   3  5.7333333      2.9600202
+## 4      1   4 -1.9328194      2.6017649
+## 5      1   5 -1.5258020      1.7517068
+## 6      1   6  4.2364294      1.1595273
+## 7      1   7 -4.9473118     -1.1738523
+## 8      1   8 -3.2275785     -0.9703107
+## 9      1   9 -0.2642777     -1.1605861
+## 10     1  10 -5.8988159     -0.9461796
+## ..   ... ...        ...            ...
+</code></pre>
+
+<p>Notice that we needed to set <code>partition=NULL</code> to clear the implicit <code>PARTITION BY MONTH,DAY</code> that would&#39;ve been there from our earlier <code>group_by</code>.</p>
+
+<p>Now let&#39;s plot <code>delay_smoothed</code>.</p>
+
+<pre><code class="r">delays_local &lt;- collect(delays)
+plot(delays_local[[&quot;delay_smoothed&quot;]],xlab=&quot;Day of Year&quot;,
+ylab=&quot;Average delay 5 days prior and after (minutes)&quot;)
+lines(delays_local[[&quot;delay_smoothed&quot;]])
+grid(nx=5)
+</code></pre>
+
+<p><img src="data:image/png;base64,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" alt="plot of chunk delays"/> </p>
+
+<p>Delays in flights appear to peak during the summer months, with smaller peaks during the winter months (holiday season), which somewhat follows intuition. Interestingly, between days 200 and 300 (August to November), flights are very on time, and even have a tendency to be a little early!</p>
+
+<p>For a list of functions that are currently tested to work in vertica.dplyr and their mappings to internal Vertica functions, please refer to the appropriately titled section at the end of this document.</p>
+
+<p><strong>Note: Beware of types. By default, numbers passed into R functions are of type numeric, and these will not work with Vertica functions that require integer values. To pass integer values, you must use &ldquo;L&rdquo; after the number in R, i.e., <code>func(2L,3L)</code>.</strong></p>
+
+<h2>Other (handy) functionality</h2>
+
+<p>We&#39;ve gone over accessing tables and manipulating them with most of the operations that likely describe the majority of what you will do with vertica.dplyr, including a general template for how to invoke Vertica functions.</p>
+
+<p>Now we&#39;ll (in a much more brief way) go over some of the additional things that can be done using vertica.dplyr.</p>
+
+<p>Many of the functions described below will take a <code>VerticaConnection</code> object, meaning something that may be accessed by retrieving the <code>con</code> member of your <code>src_vertica</code> object. In the examples that we&#39;ve been using, this would be <code>vertica$con</code>.</p>
+
+<h3>Creating a table in Vertica</h3>
+
+<p>More often than not, the data to be prepared already exist in Vertica. On some other occasions, you may want to copy data from your R instance to Vertica using <code>copy_to</code>. Other times, you might want to create a table of your own and take control over your schema and data types.</p>
+
+<p>To do so, you need to create a character vector that describes the schema of your table, and invoke <code>db_create_table</code> with a <code>VerticaConnection</code>.</p>
+
+<p>For example, to create a table named <code>New_Table</code>, with a schema of <code>INTEGER</code>, <code>VARCHAR</code>, and <code>VARCHAR</code> corresponding to columns <code>employeeID</code>, <code>name</code>, and <code>department</code>, I would be able to do so in the following way:</p>
+
+<pre><code class="r">types &lt;- c(&quot;integer&quot;,&quot;varchar&quot;,&quot;varchar&quot;)
+names(types) &lt;- c(&quot;employeeID&quot;,&quot;name&quot;,&quot;department&quot;)
+db_create_table(vertica$con,&quot;New_Table&quot;,types)
+</code></pre>
+
+<h3>Loading from CSV</h3>
+
+<p><code>db_load_from_file</code> provides a convenient way to load data from a file. To invoke it, you would need to know:</p>
+
+<ol>
+<li>The name of the file (<em>example: foo.csv</em>)</li>
+<li>Your <code>src_vertica</code> object (<em>example: <code>vertica</code></em>)</li>
+<li>The type of delimiter in the file (<em>example: &#39;,&#39;</em>)</li>
+<li>The number of lines to skip at the beginning of the file, which is useful
+for files with headings (<em>example: 1L</em>)</li>
+<li>Whether you would like to append this data to existing data in a table or overwrite it. (<em>example: TRUE</em>)</li>
+<li>The name of the table into which you would like to load the data (<em>example: mytable</em>)</li>
+</ol>
+
+<pre><code class="r">db_load_from_file(vertica,&quot;mytable&quot;,&quot;foo.csv&quot;,sep=&quot;,&quot;,skip=1L,append=TRUE)
+</code></pre>
+
+<p>Note that <code>mytable</code> will already have to exist, and the schema will have to be compatible with the data you are loading. At the moment, vertica.dplyr will <strong>not</strong> automatically scan your file for a schema and create an appropriate table for you.</p>
+
+<h3>Listing, dropping, and checking tables</h3>
+
+<p>You can view, check for, and drop tables by using <code>db_list_tables</code>, <code>db_has_table</code>, and <code>db_drop_table</code>, respectively:</p>
+
+<pre><code class="r">db_list_tables(vertica$con)
+</code></pre>
+
+<pre><code>##  [1] AllstarFull         Appearances         AwardsManagers     
+##  [4] AwardsPlayers       AwardsShareManagers AwardsSharePlayers 
+##  [7] BattingPost         compute_test_table  d1                 
+## [10] d2                  Fielding            FieldingOF         
+## [13] FieldingPost        flights             HallOfFame         
+## [16] LahmanData          Managers            ManagersHalf       
+## [19] Master              Pitching            PitchingPost       
+## [22] ref_join            Salaries            Schools            
+## [25] SchoolsPlayers      SeriesPost          Teams              
+## [28] TeamsFranchises     TeamsHalf           temp               
+## 30 Levels: AllstarFull Appearances AwardsManagers ... temp
+</code></pre>
+
+<pre><code class="r">db_has_table(vertica$con,&quot;foobar&quot;)
+</code></pre>
+
+<pre><code>## [1] FALSE
+</code></pre>
+
+<pre><code class="r">db_has_table(vertica$con,&quot;Salaries&quot;)
+</code></pre>
+
+<pre><code>## [1] TRUE
+</code></pre>
+
+<pre><code class="r">db_drop_table(vertica$con,&quot;Salaries&quot;)
+</code></pre>
+
+<h3>Explaining Queries</h3>
+
+<p>Queries (tbl objects) can be explained using <code>explain</code>:</p>
+
+<pre><code class="r">explain(q5)
+</code></pre>
+
+<pre><code>## &lt;SQL&gt;
+## SELECT &quot;origin&quot;, &quot;count&quot;, &quot;delay&quot;
+## FROM (SELECT &quot;origin&quot;, count(*) AS &quot;count&quot;, AVG(&quot;arr_delay&quot;) AS &quot;delay&quot;
+## FROM &quot;flights&quot;
+## WHERE &quot;year&quot; = 2013.0 AND &quot;month&quot; &gt; 1.0 AND &quot;month&quot; &lt; 12.0 AND NOT(&quot;arr_delay&quot;IS NULL)
+## GROUP BY &quot;origin&quot;) AS &quot;_W7&quot;
+## ORDER BY &quot;delay&quot; DESC
+## 
+## 
+## &lt;PLAN&gt;
+## ------------------------------ QUERY PLAN DESCRIPTION: ------------------------------
+## EXPLAIN SELECT &quot;origin&quot;, &quot;count&quot;, &quot;delay&quot; FROM (SELECT &quot;origin&quot;, count(*) AS &quot;count&quot;, AVG(&quot;arr_delay&quot;) AS &quot;delay&quot; FROM &quot;flights&quot; WHERE &quot;year&quot; = 2013.0 AND &quot;month&quot; &gt; 1.0 AND &quot;month&quot; &lt; 12.0 AND NOT(&quot;arr_delay&quot;IS NULL) GROUP BY &quot;origin&quot;) AS &quot;_W7&quot; ORDER BY &quot;delay&quot; DESC
+## Access Path:+-SORT [Cost: 220K, Rows: 3] (PATH ID: 1)
+## |  Order: _W7.delay DESC
+## | +---&gt; GROUPBY HASH (LOCAL RESEGMENT GROUPS) [Cost: 220K, Rows: 3] (PATH ID: 3)
+## | |      Aggregates: max(flights.origin), count(*), sum_float(flights.arr_delay), count(flights.arr_delay)
+## | |      Group By: collation(flights.origin, &#39;en_US&#39;)
+## | | +---&gt; STORAGE ACCESS for flights [Cost: 219K, Rows: 280K] (PATH ID: 4)
+## | | |      Projection: public.flights_super
+## | | |      Materialize: flights.arr_delay, flights.origin
+## | | |      Filter: (flights.year = 2013.0)
+## | | |      Filter: ((flights.month &gt; 1.0) AND (flights.month &lt; 12.0))
+## | | |      Filter: (NOT (flights.arr_delay IS NULL))
+</code></pre>
+
+<h3>Saving queries to views and tables</h3>
+
+<p><code>compute</code> and <code>db_save_view</code> will allow you to save your <code>tbl</code> objects to tables and views in Vertica, respectively. Once saved as a view or table, they can easily be transported to Distributed R via <code>tbl2dframe</code> and <code>tbl2darray</code> (described in the following section).</p>
+
+<pre><code class="r"># Save to a table named &quot;mytable&quot;
+compute(tbl,name=&quot;mytable&quot;)
+# Save to a view named &quot;myview&quot;
+db_save_view(tbl,name=&quot;myview&quot;)
+</code></pre>
+
+<h2>Using Distributed R&#39;s Native-Data-Loader with tbl2darray and tbl2dframe (requires vRODBC)</h2>
+
+<p>The Distributed-R team has developed a method of <a href="http://en.wikipedia.org/wiki/Distributed_R#Integration_with_databases">fast parallel transfer</a> between the Vertica database and Distributed R. This technique utilizes several parallel ODBC connections, through which data are pushed from Vertica in a data-locality-aware manner (a <strong>PARTITION BEST</strong> UDx). </p>
+
+<p>The functionality is available in the <a href="http://www.vertica.com/wp-content/uploads/2014/06/HPdata-Manual.pdf">HPdata</a> package, along with a standard ODBC connector interface. <code>HPdata</code> is another <em>soft</em> dependency of vertica.dplyr, meaning that vertica.dplyr will only attempt to load it when either <code>tbl2darray</code> or <code>tbl2dframe</code> is invoked.</p>
+
+<p>Converting a <code>tbl_vertica</code> object to a Distributed R <code>dframe</code> or <code>darray</code> is easy. One only needs to provide a <code>tbl_vertica</code> object to either <code>tbl2darray</code> or <code>tbl2dframe</code> if using a vRODBC-backed tbl_vertica, or the <code>tbl_vertica</code> object and a <code>dsn</code> reference for ODBC if using a RJDBC-backed tbl_vertica.</p>
+
+<p>You can transform a <code>tbl_vertica</code> that uses <em>either</em> vRODBC or RJDBC, but the Vertica connector uses vRODBC; ergo, an extra <code>dsn</code> argument is needed for the RJDBC case.</p>
+
+<p>Additional parameters to <code>tbl2dframe</code> and <code>tbl2darray</code> exist, such as the number of partitions for the constructed dframe or darray; please see the manual page for details.</p>
+
+<pre><code class="r"># Example 1, using vRODBC-backed tbl_vertica
+foo &lt;- tbl(vertica,&quot;myTable&quot;)
+my.dframe &lt;- tbl2dframe(foo)
+
+# Example 2, using a RJDBC-backed tbl_vertica
+foo &lt;- tbl(vertica,&quot;myTable&quot;)
+bar &lt;- mutate(foo,col=col1+col2)
+my.darray &lt;- tbl2darray(bar,dsn=&quot;VerticaDSN&quot;,npartitions=4)
+</code></pre>
+
+<h2>List of tested Vertica analytic functions and their Vertica.dplyr names</h2>
+
+<p>Functions that are not listed here have not been tested, but may be invokable by using the Vertica function name from within vertica.dplyr.</p>
+
+<p><strong>Vertica Function Name</strong> : Name in vertica.dplyr</p>
+
+<ul>
+<li><strong>lag</strong> : lag</li>
+<li><strong>conditional_change_event</strong> : changed</li>
+<li><strong>conditional_true_event</strong> : isTrue</li>
+<li><strong>ntile</strong> : ntile</li>
+<li><strong>lead</strong> : lead</li>
+<li><strong>median</strong> : median</li>
+<li><strong>row_number</strong> : row_number</li>
+<li><strong>first_value</strong> : head</li>
+<li><strong>last_value</strong> : tail</li>
+<li><strong>exponential_moving_average</strong> : exp_mvg_avg</li>
+<li><strong>percentile_cont</strong> : percentile_cont</li>
+<li><strong>percentile_disc</strong> : percentile_disc</li>
+<li><strong>rank</strong> : rank, min_rank</li>
+<li><strong>dense_rank</strong> : dense_rank</li>
+<li><strong>percent_rank</strong> : percent_rank</li>
+<li><strong>cume_dist</strong> : cume_dist</li>
+<li><strong>row_number</strong> : row_num</li>
+<li><strong>stddev</strong> : sd</li>
+<li><strong>stddev_pop</strong> : sd_pop</li>
+<li><strong>var_pop</strong> : var_pop</li>
+<li><strong>var_samp</strong> : var_samp</li>
+<li><strong>avg</strong> : mean</li>
+<li><strong>sum</strong> : sum</li>
+<li><strong>min</strong> : min</li>
+<li><strong>max</strong> : max</li>
+<li><strong>count(*)</strong> : n</li>
+<li><strong>regr_slope</strong> : lm_slope</li>
+<li><strong>regr_intercept</strong> : lm_intercept</li>
+<li><strong>covar_samp</strong> : cov</li>
+<li><strong>bit_and</strong> : bitwAnd</li>
+<li><strong>bit_or</strong> : bitwOr</li>
+<li><strong>bit_xor</strong> : bitwXor</li>
+</ul>
+
+<p>For descriptions of and help for these functions, please refer to the appropriate section(s) in the <a href="http://www.vertica.com/hp-vertica-documentation/">Vertica User Manual</a>. </p>
+
+<h2>Further Reading</h2>
+
+<p>This user guide touches upon most of the useful features in vertica.dplyr, but is not comprehensive.</p>
+
+<p>For more information and help on the functions that vertica.dplyr exports, please refer to their manual pages.</p>
+
+<p>For more literature on dplyr, you may look at the excellent documentation available for it in <a href="http://cran.rstudio.com/web/packages/dplyr/vignettes/introduction.html">Hadley Wickham&#39;s RStudio pages</a>. </p>
+
+</body>
+
+</html>
