@@ -1,7 +1,7 @@
 ---
 title: "Vertica.dplyr User Guide"
 author: "Edward Ma"
-date: "2015-05-08"
+date: "2015-05-29"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Vertica.dplyR User Guide}
@@ -16,7 +16,7 @@ Vertica.dplyR is an R package developed by HP that provides Vertica-backend supp
 * [HPdata][4]-style functions (data transport from Vertica to Distributed R via the data loader), namely tbl2d**object** (where **object** is either **array** or **frame**), that are compatible with dplyr tbl objects.
 * Easy CSV-loading into Vertica.
 * copy_to functionality that takes advantage of Vertica's fast **COPY LOCAL** feature.
-* Connectivity to Vertica through either JDBC **OR** ODBC.
+* Connectivity to Vertica through either JDBC or ODBC.
 * (Future Feature) Seamless Vertica UDx invocation.
 
 If you are already familiar with what dplyr is and what it can do, you should skip the background description below.
@@ -37,18 +37,17 @@ The tool offers convenient methods of manipulating data frames, which can be ana
 
 For single data.frames (or tables):
 
-* **filter**
-  * Filters tables by rows matching certain criteria (e.g., filter(table,col1 > 5, col2 ==3))    
-  * Equivalent to (SELECT ... from table WHERE ...) 
-* **arrange**
+1. **filter**
+  * Filters tables by rows matching certain criteria (e.g., filter(table,col1 > 5, col2 ==3)), equivalent to (**SELECT** ... from table **WHERE** ...) 
+2. **arrange**
   * Orders rows (e.g., arrange(tbl,desc(col1)))
-* **select**
+3. **select**
   * Selects columns (e.g., select(tbl,'col1','col2'))
-* **mutate**
+4. **mutate**
   * Create new columns (e.g., mutate(tbl,new_col1=col3/col2,new_col2=fun(col4,col5)))
-* **summarise** (or **summarize**)
+5. **summarise** (or **summarize**)
   * Collapses rows belonging to a certain group into a single one (e.g., for aggregations)
-  * Analogous to GROUP BY
+  * Analogous to **GROUP BY**
 
 There are also verbs for multiple tables, such as (whose functions are mostly self-explanatory) left_join(), inner_join(), semi_join(), anti_join(), union(), intersect().
 
@@ -66,7 +65,7 @@ At present, vertica.dplyr has 2 hard dependencies: [assertthat](http://cran.r-pr
 
 **Soft** means that there is no enforcement of having these packages installed on the user's system to install vertica.dplyr. However, to use vertica.dplyr, at least one of **RJDBC** or **vRODBC** must be installed and configured. These **soft** dependencies will be loaded (at which point it will be required to have the package installed) when their specific functionality is invoked. For example, when creating a vertica.dplyr connection to Vertica with ODBC, vertica.dplyr will check to make sure that **vRODBC** is installed and loadable. If it isn't, it will throw an error.
 
-You will also need access to a Vertica database (must be configured separately), as well as either (or both) the ODBC or JDBC Vertica driver(s) installed and configured on your host machine (the one that will run vertica.dplyr). Please refer to external documentation for help with these steps.
+You will also need access to a Vertica database (must be configured separately), as well as either (or both) the ODBC or JDBC Vertica driver(s) installed and configured on your host machine (the one that will run vertica.dplyr). Please refer to external documentation for help with these steps. A guide is available at [this](http://my.vertica.com/docs/DISTR/1.0.x/HTML/index.htm#DistributedR/InstallingDistributedR/Installing_vRODBC/Installing_vRODBC.htm) link.
 
 # Using Vertica.dplyr
 
@@ -164,7 +163,7 @@ Before we can walk through the example, we must understand what a "tbl" is. Some
 
 ## Retrieving a tbl reference
 
-One way to get started with a tbl_vertica object is to directly access an existing table. For example, we could get access to the "Salaries" table listed above in the printout of our src_vertica objects. To do this, we use the `tbl` function on our `src_vertica` object.
+One way to get started with a tbl_vertica object is to directly access an existing table. For example, we could get access to the "Salaries" table listed above in the printout of our src_vertica objects. To do this, we use the `tbl` function on our `src_vertica` object. This table is from the `Lahman` package available on [CRAN](http://cran.r-project.org/web/packages/Lahman/index.html).
 
 
 ```r
@@ -310,7 +309,7 @@ In our case, since we are only analyzing flight delay, the airports, and how the
 
 ```r
 # Select columns month, day, arr_delay, and origin
-q1 <- select(flights_vertica, month, day, origin, arr_delay)
+q1 <- select(flights_vertica, year, month, day, origin, arr_delay)
 q1
 ```
 
@@ -320,20 +319,20 @@ q1
 ## -----+Host: 127.0.0.1
 ## -----+DB Version: 07.01.0001
 ## -----+ODBC Version: 03.52
-## From: flights [336,776 x 4]
+## From: flights [336,776 x 5]
 ## 
-##    month day origin arr_delay
-## 1      1   1    EWR        11
-## 2      1   1    LGA        20
-## 3      1   1    JFK        33
-## 4      1   1    JFK       -18
-## 5      1   1    LGA       -25
-## 6      1   1    EWR        12
-## 7      1   1    EWR        19
-## 8      1   1    LGA       -14
-## 9      1   1    JFK        -8
-## 10     1   1    LGA         8
-## ..   ... ...    ...       ...
+##    year month day origin arr_delay
+## 1  2013     1   1    EWR        11
+## 2  2013     1   1    LGA        20
+## 3  2013     1   1    JFK        33
+## 4  2013     1   1    JFK       -18
+## 5  2013     1   1    LGA       -25
+## 6  2013     1   1    EWR        12
+## 7  2013     1   1    EWR        19
+## 8  2013     1   1    LGA       -14
+## 9  2013     1   1    JFK        -8
+## 10 2013     1   1    LGA         8
+## ..  ...   ... ...    ...       ...
 ```
 
 ### Filter: Select rows matching provided criteria
@@ -355,21 +354,21 @@ q2
 ## -----+Host: 127.0.0.1
 ## -----+DB Version: 07.01.0001
 ## -----+ODBC Version: 03.52
-## From: flights [281,637 x 4]
+## From: flights [281,637 x 5]
 ## Filter: year == 2013, month > 1, month < 12 
 ## 
-##    month day origin arr_delay
-## 1      2   1    LGA        NA
-## 2      2   1    EWR        NA
-## 3      2   1    EWR        NA
-## 4      2   1    EWR        NA
-## 5      2   1    EWR        NA
-## 6      2   1    EWR        NA
-## 7      2   1    EWR        NA
-## 8      2   1    EWR        NA
-## 9      2   1    EWR        NA
-## 10     2   1    EWR        NA
-## ..   ... ...    ...       ...
+##    year month day origin arr_delay
+## 1  2013     2   1    LGA        NA
+## 2  2013     2   1    EWR        NA
+## 3  2013     2   1    EWR        NA
+## 4  2013     2   1    EWR        NA
+## 5  2013     2   1    EWR        NA
+## 6  2013     2   1    EWR        NA
+## 7  2013     2   1    EWR        NA
+## 8  2013     2   1    EWR        NA
+## 9  2013     2   1    EWR        NA
+## 10 2013     2   1    EWR        NA
+## ..  ...   ... ...    ...       ...
 ```
 The data now printed out show flights beginning with the first of February. Just as when we retrieved a reference to a Vertica table, we can view the query associated with this filter operation:
 
@@ -380,7 +379,7 @@ q2$query
 ```
 
 ```
-## <Query> SELECT "month" AS "month", "day" AS "day", "origin" AS "origin", "arr_delay" AS "arr_delay"
+## <Query> SELECT "year" AS "year", "month" AS "month", "day" AS "day", "origin" AS "origin", "arr_delay" AS "arr_delay"
 ## FROM "flights"
 ## WHERE "year" = 2013.0 AND "month" > 1.0 AND "month" < 12.0
 ## An object of class "VerticaConnection"
@@ -410,27 +409,27 @@ q3
 ## -----+Host: 127.0.0.1
 ## -----+DB Version: 07.01.0001
 ## -----+ODBC Version: 03.52
-## From: flights [273,928 x 4]
+## From: flights [273,928 x 5]
 ## Filter: year == 2013, month > 1, month < 12, !is.na(arr_delay) 
 ## 
-##    month day origin arr_delay
-## 1      2   1    EWR         4
-## 2      2   1    EWR        -4
-## 3      2   1    LGA         8
-## 4      2   1    JFK       -10
-## 5      2   1    JFK         9
-## 6      2   1    EWR       -14
-## 7      2   1    JFK        -1
-## 8      2   1    LGA         9
-## 9      2   1    LGA         0
-## 10     2   1    LGA        -4
-## ..   ... ...    ...       ...
+##    year month day origin arr_delay
+## 1  2013     2   1    EWR         4
+## 2  2013     2   1    EWR        -4
+## 3  2013     2   1    LGA         8
+## 4  2013     2   1    JFK       -10
+## 5  2013     2   1    JFK         9
+## 6  2013     2   1    EWR       -14
+## 7  2013     2   1    JFK        -1
+## 8  2013     2   1    LGA         9
+## 9  2013     2   1    LGA         0
+## 10 2013     2   1    LGA        -4
+## ..  ...   ... ...    ...       ...
 ```
 We do not have NA values anymore. dplyr has converted our R-style boolean expression on `arr_delay` for `NA` values into `NOT NULL` in SQL.
 
 ### Summarise, group_by, and arrange: GROUP BY airports and ORDER them by average delay
 
-Now for the fun part. Our data have been cleaned up a bit, and we want to see which airport had the worst delays going out of NYC in 2013, between the months of February and December.
+Now for the fun part. Our data have been cleaned up a bit, and we want to see which airport had the worst delays going out of NYC in 2013, between the months of February and November.
 
 Astute SQL experts will recognize that these operations correspond to running AVG and GROUP BY operations on these columns. Of course, we'll want to use the dplyr equivalent.
 
@@ -489,7 +488,7 @@ q5$query
 ## FROM (SELECT "origin", count(*) AS "count", AVG("arr_delay") AS "delay"
 ## FROM "flights"
 ## WHERE "year" = 2013.0 AND "month" > 1.0 AND "month" < 12.0 AND NOT("arr_delay"IS NULL)
-## GROUP BY "origin") AS "_W7"
+## GROUP BY "origin") AS "_W10"
 ## ORDER BY "delay" DESC
 ## An object of class "VerticaConnection"
 ## Slot "conn":
@@ -739,15 +738,15 @@ explain(q5)
 ## FROM (SELECT "origin", count(*) AS "count", AVG("arr_delay") AS "delay"
 ## FROM "flights"
 ## WHERE "year" = 2013.0 AND "month" > 1.0 AND "month" < 12.0 AND NOT("arr_delay"IS NULL)
-## GROUP BY "origin") AS "_W7"
+## GROUP BY "origin") AS "_W10"
 ## ORDER BY "delay" DESC
 ## 
 ## 
 ## <PLAN>
 ## ------------------------------ QUERY PLAN DESCRIPTION: ------------------------------
-## EXPLAIN SELECT "origin", "count", "delay" FROM (SELECT "origin", count(*) AS "count", AVG("arr_delay") AS "delay" FROM "flights" WHERE "year" = 2013.0 AND "month" > 1.0 AND "month" < 12.0 AND NOT("arr_delay"IS NULL) GROUP BY "origin") AS "_W7" ORDER BY "delay" DESC
+## EXPLAIN SELECT "origin", "count", "delay" FROM (SELECT "origin", count(*) AS "count", AVG("arr_delay") AS "delay" FROM "flights" WHERE "year" = 2013.0 AND "month" > 1.0 AND "month" < 12.0 AND NOT("arr_delay"IS NULL) GROUP BY "origin") AS "_W10" ORDER BY "delay" DESC
 ## Access Path:+-SORT [Cost: 220K, Rows: 3] (PATH ID: 1)
-## |  Order: _W7.delay DESC
+## |  Order: _W10.delay DESC
 ## | +---> GROUPBY HASH (LOCAL RESEGMENT GROUPS) [Cost: 220K, Rows: 3] (PATH ID: 3)
 ## | |      Aggregates: max(flights.origin), count(*), sum_float(flights.arr_delay), count(flights.arr_delay)
 ## | |      Group By: collation(flights.origin, 'en_US')
@@ -772,7 +771,7 @@ db_save_view(tbl,name="myview")
 ```
 
 ## Using Distributed R's Native-Data-Loader with tbl2darray and tbl2dframe (requires vRODBC)
-The Distributed-R team has developed a method of [fast parallel transfer][3] between the Vertica database and Distributed R. This technique utilizes several parallel ODBC connections, through which data are pushed from Vertica in a data-locality-aware manner (a **PARTITION BEST** UDx). 
+The Distributed-R team has developed a method of [fast parallel transfer][3] between the Vertica database and Distributed R. This technique utilizes several parallel socket connections, through which data are pushed from Vertica in a data-locality-aware manner. 
 
 The functionality is available in the [HPdata][4] package, along with a standard ODBC connector interface. `HPdata` is another *soft* dependency of vertica.dplyr, meaning that vertica.dplyr will only attempt to load it when either `tbl2darray` or `tbl2dframe` is invoked.
 
