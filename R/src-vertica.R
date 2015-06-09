@@ -400,7 +400,7 @@ db_drop_view <- function(con, view) {
 #' @method db_drop_view VerticaConnection
 #' @export
 db_drop_view.VerticaConnection <- function(con, view) {
-  assert_that(is.string(table))
+  assert_that(is.string(view))
 
   sql <- build_sql("DROP VIEW ", ident(table),
     con = con)
