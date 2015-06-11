@@ -383,6 +383,8 @@ db_has_table.VerticaConnection <- function(con, table) {
 db_drop_table.VerticaConnection <- function(con, table, force = FALSE, ...) {
   assert_that(is.string(table))
 
+  if(!db_has_table(con,table)) stop("Table does not exist in database.")
+
   sql <- build_sql("DROP TABLE ", if (force) sql("IF EXISTS "), ident(table),
     con = con)
   send_query(con@conn, sql)
@@ -401,6 +403,8 @@ db_drop_view <- function(con, view) {
 #' @export
 db_drop_view.VerticaConnection <- function(con, view) {
   assert_that(is.string(view))
+
+  if(!db_has_table(con,view)) stop("View does not exist in database.")
 
   sql <- build_sql("DROP VIEW ", ident(view),
     con = con)
