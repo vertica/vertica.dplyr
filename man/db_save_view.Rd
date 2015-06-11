@@ -18,7 +18,7 @@ available parallelism to the native data loader.}
 A new tbl_vertica reference to the saved view.
 }
 \description{
-If the save is defined to be temporary (which is default), the view will be deleted
+If the save is defined to be temporary (non-default behavior), the view will be deleted
 upon termination of the session.
 }
 \details{

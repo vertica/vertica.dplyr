@@ -20,7 +20,7 @@ required.}
 dobject.}
 
 \item{verticaConnector}{TRUE to use the Vertica Connector for Distributed R. If FALSE, your table must
-include a 'rowid' column. See the manual page for db2darray for more information.}
+include a 'rowid' column. See the manual page for HPdata::db2darray for more information.}
 
 \item{loadPolicy}{"local" or "uniform". Please see help doc for db2darray in package HPdata.
 Please read the details for more information.}
@@ -32,7 +32,7 @@ A new darray object
 This requires distributedR and HPData and will attempt to load them. If Distributed R is not already running, it will start it.
 Internally, this function simply saves the tbl reference as a view in Vertica and then uses the Vertica Loader to move data into
 Distributed R, and then deletes the view from database. Note that if you do not use the Vertica Native Data Loader, your table
-must have a 'rowid' column for this to work (see ?db2darray for more information).
+must have a 'rowid' column for this to work (see ?HPdata::db2darray for more information).
 }
 \examples{
 \dontrun{

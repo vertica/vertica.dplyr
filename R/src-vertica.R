@@ -291,7 +291,6 @@ db_create_table.VerticaConnection <- function(con, table, types, temporary=FALSE
 }
 
 # Currently slow for bulk insertions
-#' @export
 db_insert_into.VerticaConnection <- function(con, table, values, ...) {
   cols <- lapply(values, escape, collapse = NULL, parens = FALSE, con = con)
   col_mat <- matrix(unlist(cols, use.names = FALSE), nrow = nrow(values))
