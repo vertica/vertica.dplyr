@@ -402,7 +402,7 @@ db_drop_view <- function(con, view) {
 db_drop_view.VerticaConnection <- function(con, view) {
   assert_that(is.string(view))
 
-  sql <- build_sql("DROP VIEW ", ident(table),
+  sql <- build_sql("DROP VIEW ", ident(view),
     con = con)
   send_query(con@conn, sql)
 }
