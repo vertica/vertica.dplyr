@@ -468,6 +468,8 @@ get_data_type <- function(val, ...) {
 }
 
 #' @export
+sql_set_op.VerticaConnection <- dplyr:::sql_set_op.DBIConnection
+#' @export
 sql_escape_ident.VerticaConnection <- dplyr:::sql_escape_ident.DBIConnection
 #' @export
 sql_select.VerticaConnection <- dplyr:::sql_select.DBIConnection
