@@ -215,7 +215,7 @@ db_load_from_file <- function(dest, table.name, file.name, sep = " ", skip = 1L,
   assert_that(is.character(sep))
   assert_that(class(dest)[1] == "src_vertica")
 
-  stopifnot(db_has_table(dest$con,table.name))
+  if(!db_has_table(dest$con,table.name)) stop("The specified table does not exist in Vertica.")
 
   skip <- ifelse(skip >=0,as.integer(skip),0L)
 
