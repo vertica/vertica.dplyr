@@ -373,6 +373,11 @@ db_list_tables.VerticaConnection <- function(con) {
 }
 
 #' @export
+db_has_table.src_vertica <- function(src,table) {
+  db_has_table(src$con,table)
+}
+
+#' @export
 db_has_table.VerticaConnection <- function(con, table) {
   res <- db_list_tables(con)
   table %in% res
