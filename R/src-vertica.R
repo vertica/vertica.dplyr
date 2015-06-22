@@ -362,14 +362,22 @@ db_save_query.VerticaConnection <- function(con, sql, name, temporary = FALSE,..
 
 #' @export
 db_list_tables.VerticaConnection <- function(con) {
-  tbl_query <- "SELECT table_name FROM all_tables WHERE table_type NOT IN (\'SYSTEM TABLE\')"
+  tbl_query <- "SELECT schema_name,table_name FROM all_tables WHERE table_type NOT IN (\'SYSTEM TABLE\')"
   if(con@type=="ODBC") {
     res <- sqlQuery(con@conn,tbl_query)
   }
   else {
     res <- dbGetQuery(con@conn,tbl_query)
   }
-    res[[1]]
+
+    table.names <- mapply(function(x,y) {
+      if(as.character(x) != "public") {
+        y <- paste0(as.character(x),".",as.character(y))
+      }
+      as.character(y)
+    },res[[1]],res[[2]])
+
+    table.names
 }
 
 #' @export
@@ -446,6 +454,11 @@ db_explain.VerticaConnection <- function(con, sql, ...) {
   output[1:(graphVizInd-4)]
 }
 
+#' @export
+sql_escape_ident.VerticaConnection <- function(con, x) {
+  x
+}
+
 # Analyze for performance
 #' @export
 db_analyze.VerticaConnection <- function(con, table, ...) {
@@ -474,8 +487,6 @@ get_data_type <- function(val, ...) {
 
 #' @export
 sql_set_op.VerticaConnection <- dplyr:::sql_set_op.DBIConnection
-#' @export
-sql_escape_ident.VerticaConnection <- dplyr:::sql_escape_ident.DBIConnection
 #' @export
 sql_select.VerticaConnection <- dplyr:::sql_select.DBIConnection
 #' @export
