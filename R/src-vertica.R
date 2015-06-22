@@ -280,6 +280,7 @@ copy_to.src_vertica <- function(dest, df, name = deparse(substitute(df)),
 #' @export
 db_create_table.VerticaConnection <- function(con, table, types, temporary=FALSE, ...) {
   assert_that(is.string(table), is.character(types))
+  if(db_has_table(con,table)) stop("Table name already exists")
 
   field_names <- escape(ident(names(types)), collapse = NULL, con = con)
   fields <- dplyr:::sql_vector(paste0(field_names, " ", types), parens = TRUE,
@@ -287,7 +288,14 @@ db_create_table.VerticaConnection <- function(con, table, types, temporary=FALSE
 
   sql <- build_sql("CREATE ", if(temporary) sql("TEMPORARY "), "TABLE ", ident(table), " ", fields, con = con)
 
-  send_query(con@conn, sql)
+  invisible(send_query(con@conn, sql))
+
+  if(!db_has_table(con,table)) stop("Could not create table; are the data types specified in Vertica-compatible format?")
+}
+
+#' @export
+db_create_table.src_vertica <- function(src, table, types, temporary=FALSE, ...) {
+  db_create_table(src$con, table, types, temporary, ...)
 }
 
 # Currently slow for bulk insertions
@@ -361,6 +369,11 @@ db_save_query.VerticaConnection <- function(con, sql, name, temporary = FALSE,..
 }
 
 #' @export
+db_save_query.src_vertica <- function(src, sql, name, temporary = FALSE,...) {
+  db_save_query(src$con, sql, name, temporary,...)
+}
+
+#' @export
 db_list_tables.VerticaConnection <- function(con) {
   tbl_query <- "SELECT schema_name,table_name FROM all_tables WHERE table_type NOT IN (\'SYSTEM TABLE\')"
   if(con@type=="ODBC") {
@@ -378,6 +391,11 @@ db_list_tables.VerticaConnection <- function(con) {
     },res[[1]],res[[2]])
 
     table.names
+}
+
+#' @export
+db_list_tables.src_vertica <- function(src) {
+  db_list_tables(src$con)
 }
 
 #' @export
@@ -402,6 +420,11 @@ db_drop_table.VerticaConnection <- function(con, table, force = FALSE, ...) {
   send_query(con@conn, sql)
 }
 
+#' @export
+db_drop_table.src_vertica <- function(src, table, force = FALSE, ...) {
+  db_drop_table(src$con, table, force, ...)
+}
+
 #' Like db_drop_table, but for views.
 #'
 #' @param con dplyr src connection object 
@@ -421,6 +444,11 @@ db_drop_view.VerticaConnection <- function(con, view) {
   sql <- build_sql("DROP VIEW ", ident(view),
     con = con)
   send_query(con@conn, sql)
+}
+
+#' @export
+db_drop_view.src_vertica <- function(src, view) {
+  db_drop_view(src$con,view)
 }
 
 # Get names of columns from sql
