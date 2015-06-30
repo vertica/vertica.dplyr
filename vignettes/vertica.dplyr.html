@@ -319,26 +319,26 @@ vertica_odbc
 <pre><code>## src:  Vertica ODBC Connection
 ## -----+DSN: VerticaDSN
 ## -----+Host: 127.0.0.1
-## -----+DB Version: 07.01.0001
-## -----+ODBC Version: 03.52
-## tbls: AllstarFull, Appearances, AwardsManagers, AwardsPlayers,
-##   AwardsShareManagers, AwardsSharePlayers, BattingPost,
-##   compute_test_table, d1, d2, Fielding, FieldingOF, FieldingPost,
-##   HallOfFame, LahmanData, Managers, ManagersHalf, Master, Pitching,
-##   PitchingPost, ref_join, Salaries, Schools, SchoolsPlayers, SeriesPost,
-##   Teams, TeamsFranchises, TeamsHalf, temp
+## -----+DB Version: 07.01.0002
+## -----+ODBC Version: 03.80
+## tbls: AllstarFull, AwardsManagers, AwardsPlayers, AwardsShareManagers,
+##   AwardsSharePlayers, bank_original, compute_test_table, d1, d2, ddd,
+##   dddd, ddddd, dddddd, Fielding, FieldingOF, FieldingPost, HallOfFame,
+##   LahmanData, Managers, ManagersHalf, Master, Pitching, PitchingPost,
+##   ref_join, Salaries, Schools, SchoolsPlayers, SeriesPost,
+##   TeamsFranchises, tempName, test, tsempName
 </code></pre>
 
 <pre><code class="r">vertica_jdbc
 </code></pre>
 
 <pre><code>## src:  Vertica JDBC Connection [dbadmin@localhost:5433/foobar]
-## tbls: AllstarFull, Appearances, AwardsManagers, AwardsPlayers,
-##   AwardsShareManagers, AwardsSharePlayers, BattingPost,
-##   compute_test_table, d1, d2, Fielding, FieldingOF, FieldingPost,
-##   HallOfFame, LahmanData, Managers, ManagersHalf, Master, Pitching,
-##   PitchingPost, ref_join, Salaries, Schools, SchoolsPlayers, SeriesPost,
-##   Teams, TeamsFranchises, TeamsHalf, temp
+## tbls: AllstarFull, AwardsManagers, AwardsPlayers, AwardsShareManagers,
+##   AwardsSharePlayers, bank_original, compute_test_table, d1, d2, ddd,
+##   dddd, ddddd, dddddd, Fielding, FieldingOF, FieldingPost, HallOfFame,
+##   LahmanData, Managers, ManagersHalf, Master, Pitching, PitchingPost,
+##   ref_join, Salaries, Schools, SchoolsPlayers, SeriesPost,
+##   TeamsFranchises, tempName, test, tsempName
 </code></pre>
 
 <p>as well as whether or not <code>dsn</code> is required as a parameter for <code>tbl2dframe</code> and <code>tbl2darray</code> (described in a later section).</p>
@@ -396,8 +396,8 @@ class(vertica)
 <pre><code>## Source: Vertica ODBC Connection
 ## -----+DSN: VerticaDSN
 ## -----+Host: 127.0.0.1
-## -----+DB Version: 07.01.0001
-## -----+ODBC Version: 03.52
+## -----+DB Version: 07.01.0002
+## -----+ODBC Version: 03.80
 ## From: Salaries [23,956 x 5]
 ## 
 ##    yearID teamID lgID  playerID salary
@@ -457,8 +457,8 @@ flights_vertica
 <pre><code>## Source: Vertica ODBC Connection
 ## -----+DSN: VerticaDSN
 ## -----+Host: 127.0.0.1
-## -----+DB Version: 07.01.0001
-## -----+ODBC Version: 03.52
+## -----+DB Version: 07.01.0002
+## -----+ODBC Version: 03.80
 ## From: flights [336,776 x 16]
 ## 
 ##    year month day dep_time dep_delay arr_time arr_delay carrier tailnum
@@ -501,8 +501,8 @@ q1
 <pre><code>## Source: Vertica ODBC Connection
 ## -----+DSN: VerticaDSN
 ## -----+Host: 127.0.0.1
-## -----+DB Version: 07.01.0001
-## -----+ODBC Version: 03.52
+## -----+DB Version: 07.01.0002
+## -----+ODBC Version: 03.80
 ## From: flights [336,776 x 5]
 ## 
 ##    year month day origin arr_delay
@@ -533,8 +533,8 @@ q2
 <pre><code>## Source: Vertica ODBC Connection
 ## -----+DSN: VerticaDSN
 ## -----+Host: 127.0.0.1
-## -----+DB Version: 07.01.0001
-## -----+ODBC Version: 03.52
+## -----+DB Version: 07.01.0002
+## -----+ODBC Version: 03.80
 ## From: flights [281,637 x 5]
 ## Filter: year == 2013, month &gt; 1, month &lt; 12 
 ## 
@@ -584,8 +584,8 @@ q3
 <pre><code>## Source: Vertica ODBC Connection
 ## -----+DSN: VerticaDSN
 ## -----+Host: 127.0.0.1
-## -----+DB Version: 07.01.0001
-## -----+ODBC Version: 03.52
+## -----+DB Version: 07.01.0002
+## -----+ODBC Version: 03.80
 ## From: flights [273,928 x 5]
 ## Filter: year == 2013, month &gt; 1, month &lt; 12, !is.na(arr_delay) 
 ## 
@@ -634,8 +634,8 @@ q5
 <pre><code>## Source: Vertica ODBC Connection
 ## -----+DSN: VerticaDSN
 ## -----+Host: 127.0.0.1
-## -----+DB Version: 07.01.0001
-## -----+ODBC Version: 03.52
+## -----+DB Version: 07.01.0002
+## -----+ODBC Version: 03.80
 ## From: &lt;derived table&gt; [?? x 3]
 ## Arrange: desc(delay) 
 ## 
@@ -659,7 +659,7 @@ q5
 ## FROM (SELECT &quot;origin&quot;, count(*) AS &quot;count&quot;, AVG(&quot;arr_delay&quot;) AS &quot;delay&quot;
 ## FROM &quot;flights&quot;
 ## WHERE &quot;year&quot; = 2013.0 AND &quot;month&quot; &gt; 1.0 AND &quot;month&quot; &lt; 12.0 AND NOT(&quot;arr_delay&quot;IS NULL)
-## GROUP BY &quot;origin&quot;) AS &quot;_W10&quot;
+## GROUP BY &quot;origin&quot;) AS &quot;_W7&quot;
 ## ORDER BY &quot;delay&quot; DESC
 ## An object of class &quot;VerticaConnection&quot;
 ## Slot &quot;conn&quot;:
@@ -762,8 +762,8 @@ delays
 <pre><code>## Source: Vertica ODBC Connection
 ## -----+DSN: VerticaDSN
 ## -----+Host: 127.0.0.1
-## -----+DB Version: 07.01.0001
-## -----+ODBC Version: 03.52
+## -----+DB Version: 07.01.0002
+## -----+ODBC Version: 03.80
 ## From: &lt;derived table&gt; [?? x 4]
 ## Grouped by: month 
 ## 
@@ -847,17 +847,18 @@ for files with headings (<em>example: 1L</em>)</li>
 <pre><code class="r">db_list_tables(vertica$con)
 </code></pre>
 
-<pre><code>##  [1] AllstarFull         Appearances         AwardsManagers     
-##  [4] AwardsPlayers       AwardsShareManagers AwardsSharePlayers 
-##  [7] BattingPost         compute_test_table  d1                 
-## [10] d2                  Fielding            FieldingOF         
-## [13] FieldingPost        flights             HallOfFame         
-## [16] LahmanData          Managers            ManagersHalf       
-## [19] Master              Pitching            PitchingPost       
-## [22] ref_join            Salaries            Schools            
-## [25] SchoolsPlayers      SeriesPost          Teams              
-## [28] TeamsFranchises     TeamsHalf           temp               
-## 30 Levels: AllstarFull Appearances AwardsManagers ... temp
+<pre><code>##  [1] AllstarFull         AwardsManagers      AwardsPlayers      
+##  [4] AwardsShareManagers AwardsSharePlayers  bank_original      
+##  [7] compute_test_table  d1                  d2                 
+## [10] ddd                 dddd                ddddd              
+## [13] dddddd              Fielding            FieldingOF         
+## [16] FieldingPost        flights             HallOfFame         
+## [19] LahmanData          Managers            ManagersHalf       
+## [22] Master              Pitching            PitchingPost       
+## [25] ref_join            Salaries            Schools            
+## [28] SchoolsPlayers      SeriesPost          TeamsFranchises    
+## [31] tempName            test                tsempName          
+## 33 Levels: AllstarFull AwardsManagers ... tsempName
 </code></pre>
 
 <pre><code class="r">db_has_table(vertica$con,&quot;foobar&quot;)
@@ -887,15 +888,15 @@ for files with headings (<em>example: 1L</em>)</li>
 ## FROM (SELECT &quot;origin&quot;, count(*) AS &quot;count&quot;, AVG(&quot;arr_delay&quot;) AS &quot;delay&quot;
 ## FROM &quot;flights&quot;
 ## WHERE &quot;year&quot; = 2013.0 AND &quot;month&quot; &gt; 1.0 AND &quot;month&quot; &lt; 12.0 AND NOT(&quot;arr_delay&quot;IS NULL)
-## GROUP BY &quot;origin&quot;) AS &quot;_W10&quot;
+## GROUP BY &quot;origin&quot;) AS &quot;_W7&quot;
 ## ORDER BY &quot;delay&quot; DESC
 ## 
 ## 
 ## &lt;PLAN&gt;
 ## ------------------------------ QUERY PLAN DESCRIPTION: ------------------------------
-## EXPLAIN SELECT &quot;origin&quot;, &quot;count&quot;, &quot;delay&quot; FROM (SELECT &quot;origin&quot;, count(*) AS &quot;count&quot;, AVG(&quot;arr_delay&quot;) AS &quot;delay&quot; FROM &quot;flights&quot; WHERE &quot;year&quot; = 2013.0 AND &quot;month&quot; &gt; 1.0 AND &quot;month&quot; &lt; 12.0 AND NOT(&quot;arr_delay&quot;IS NULL) GROUP BY &quot;origin&quot;) AS &quot;_W10&quot; ORDER BY &quot;delay&quot; DESC
+## EXPLAIN SELECT &quot;origin&quot;, &quot;count&quot;, &quot;delay&quot; FROM (SELECT &quot;origin&quot;, count(*) AS &quot;count&quot;, AVG(&quot;arr_delay&quot;) AS &quot;delay&quot; FROM &quot;flights&quot; WHERE &quot;year&quot; = 2013.0 AND &quot;month&quot; &gt; 1.0 AND &quot;month&quot; &lt; 12.0 AND NOT(&quot;arr_delay&quot;IS NULL) GROUP BY &quot;origin&quot;) AS &quot;_W7&quot; ORDER BY &quot;delay&quot; DESC
 ## Access Path:+-SORT [Cost: 220K, Rows: 3] (PATH ID: 1)
-## |  Order: _W10.delay DESC
+## |  Order: _W7.delay DESC
 ## | +---&gt; GROUPBY HASH (LOCAL RESEGMENT GROUPS) [Cost: 220K, Rows: 3] (PATH ID: 3)
 ## | |      Aggregates: max(flights.origin), count(*), sum_float(flights.arr_delay), count(flights.arr_delay)
 ## | |      Group By: collation(flights.origin, &#39;en_US&#39;)
@@ -909,12 +910,12 @@ for files with headings (<em>example: 1L</em>)</li>
 
 <h3>Saving queries to views and tables</h3>
 
-<p><code>compute</code> and <code>db_save_view</code> will allow you to save your <code>tbl</code> objects to tables and views in Vertica, respectively. Once saved as a view or table, they can easily be transported to Distributed R via <code>tbl2dframe</code> and <code>tbl2darray</code> (described in the following section).</p>
+<p><code>compute</code> and <code>db_save_view</code> will allow you to save your <code>tbl</code> objects to tables and views in Vertica, respectively. Once saved as a view or table, they can easily be transported to Distributed R via <code>tbl2dframe</code> and <code>tbl2darray</code> (described in the following section). For a given <code>tbl</code> named <code>foo</code>:</p>
 
 <pre><code class="r"># Save to a table named &quot;mytable&quot;
-compute(tbl,name=&quot;mytable&quot;)
+compute(foo,name=&quot;mytable&quot;)
 # Save to a view named &quot;myview&quot;
-db_save_view(tbl,name=&quot;myview&quot;)
+db_save_view(foo,name=&quot;myview&quot;)
 </code></pre>
 
 <h2>Using Distributed R&#39;s Native-Data-Loader with tbl2darray and tbl2dframe (requires vRODBC)</h2>
@@ -981,6 +982,50 @@ my.darray &lt;- tbl2darray(bar,dsn=&quot;VerticaDSN&quot;,npartitions=4)
 </ul>
 
 <p>For descriptions of and help for these functions, please refer to the appropriate section(s) in the <a href="http://www.vertica.com/hp-vertica-documentation/">Vertica User Manual</a>. </p>
+
+<h2>Supported dplyr-base functions</h2>
+
+<p>The following have been tested and QA-verified:</p>
+
+<ul>
+<li>tbl</li>
+<li>select</li>
+<li>filter</li>
+<li>summarise</li>
+<li>group_by</li>
+<li>arrange</li>
+<li>collect</li>
+<li>mutate</li>
+<li>explain</li>
+<li>compute</li>
+<li>anti_join</li>
+<li>semi_join</li>
+<li>copy_to</li>
+<li>%&gt;%</li>
+</ul>
+
+<p>Please look at the <a href="http://cran.r-project.org/web/packages/dplyr/index.html">dplyr docs</a> for how these work. Many others should also be functional, but they have not been extensively QA&#39;ed.</p>
+
+<h2>Auxiliary functions</h2>
+
+<p>The following are a list of functions that are used to implement many of the functions listed above in dplyr, and are thus exported as part of the package for dispatch in certain generic functions. They may be used, but are however not meant to be directly invoked by the user, and are thus not documented for their behavior:</p>
+
+<ul>
+<li>db_insert_into</li>
+<li>db_save_query</li>
+<li>db_query_fields</li>
+<li>db_query_rows</li>
+<li>db_explain</li>
+<li>db_analyze</li>
+<li>db_create_index</li>
+<li>db_data_type</li>
+</ul>
+
+<h2>Known Limitations</h2>
+
+<ul>
+<li><code>right_join</code> and <code>full_join</code> are known to not work due to a lack of a tbl_sql implementation in <code>dplyr</code>. </li>
+</ul>
 
 <h2>Further Reading</h2>
 

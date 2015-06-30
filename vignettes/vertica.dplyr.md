@@ -1,7 +1,7 @@
 ---
 title: "Vertica.dplyr User Guide"
 author: "Edward Ma"
-date: "`r Sys.Date()`"
+date: "2015-06-30"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Vertica.dplyR User Guide}
@@ -73,7 +73,8 @@ Let's now walk through a simple example to illustrate some of the fundamental da
 
 First, load the package in R:
 
-```{r Load vertica.dplyr}
+
+```r
 # Load the vertica.dplyr package, which loads dplyr as a dependency
 library(vertica.dplyr)
 ```
@@ -85,12 +86,14 @@ Note that a few of the imported dplyr functions will have names that overwrite t
 First, you will need to connect to Vertica using the `src_vertica` function. There are two ways to do this:
 
 ### Via ODBC (requires **vRODBC**):
-```{r Connect with vRODBC}
+
+```r
 # Connect to Vertica using vRODBC
 vertica_odbc <- src_vertica("VerticaDSN")
 ```
 ### Via JDBC (requires **RJDBC**):
-```{r Connect with RJDBC}
+
+```r
 # Connect to Vertica using RJDBC
 vertica_jdbc <- src_vertica(dsn = NULL, jdbcpath="/opt/vertica/java/lib/vertica_jdbc.jar","foobar","localhost",5433,"dbadmin")
 ```
@@ -98,19 +101,52 @@ Here, I am connecting to a local Vertica DB instance named "foobar" that is list
 
 Both `vertica_jdbc` and `vertica_odbc` are `src_vertica` objects, and vertica.dplyr functionality will work on both object types interchangeably. From the user-experience perspective, the only differences are how the package prints some metadata when you look at these objects, 
 
-```{r differences}
+
+```r
 # show differences
 vertica_odbc
+```
+
+```
+## src:  Vertica ODBC Connection
+## -----+DSN: VerticaDSN
+## -----+Host: 127.0.0.1
+## -----+DB Version: 07.01.0002
+## -----+ODBC Version: 03.80
+## tbls: AllstarFull, AwardsManagers, AwardsPlayers, AwardsShareManagers,
+##   AwardsSharePlayers, bank_original, compute_test_table, d1, d2, ddd,
+##   dddd, ddddd, dddddd, Fielding, FieldingOF, FieldingPost, HallOfFame,
+##   LahmanData, Managers, ManagersHalf, Master, Pitching, PitchingPost,
+##   ref_join, Salaries, Schools, SchoolsPlayers, SeriesPost,
+##   TeamsFranchises, tempName, test, tsempName
+```
+
+```r
 vertica_jdbc
+```
+
+```
+## src:  Vertica JDBC Connection [dbadmin@localhost:5433/foobar]
+## tbls: AllstarFull, AwardsManagers, AwardsPlayers, AwardsShareManagers,
+##   AwardsSharePlayers, bank_original, compute_test_table, d1, d2, ddd,
+##   dddd, ddddd, dddddd, Fielding, FieldingOF, FieldingPost, HallOfFame,
+##   LahmanData, Managers, ManagersHalf, Master, Pitching, PitchingPost,
+##   ref_join, Salaries, Schools, SchoolsPlayers, SeriesPost,
+##   TeamsFranchises, tempName, test, tsempName
 ```
 
 as well as whether or not `dsn` is required as a parameter for `tbl2dframe` and `tbl2darray` (described in a later section).
 
 As you can see, both of them print information about the connection and list the current user tables (and views) found in the database. For the rest of this tutorial, let's just use the ODBC version and call it `vertica`:
 
-```{r vertica_odbc to vertica} 
+
+```r
 vertica <- vertica_odbc
 class(vertica)
+```
+
+```
+## [1] "src_vertica" "src_sql"     "src"
 ```
 
 ## Vertica.dplyr "tables" (tbl_vertica)
@@ -129,20 +165,59 @@ Before we can walk through the example, we must understand what a "tbl" is. Some
 
 One way to get started with a tbl_vertica object is to directly access an existing table. For example, we could get access to the "Salaries" table listed above in the printout of our src_vertica objects. To do this, we use the `tbl` function on our `src_vertica` object. This table is from the `Lahman` package available on [CRAN](http://cran.r-project.org/web/packages/Lahman/index.html).
 
-```{r salaries}
+
+```r
 salaries <- tbl(vertica,"Salaries")
 ```
 
 `salaries` now contains a simple select statement on "Salaries" in Vertica. You can examine the SQL query associated with a `tbl_vertica` by accessing the `query` member of the object:
 
-```{r salaries query}
+
+```r
 salaries$query
+```
+
+```
+## <Query> SELECT "yearID", "teamID", "lgID", "playerID", "salary"
+## FROM "Salaries"
+## An object of class "VerticaConnection"
+## Slot "conn":
+## vRODBC Connection 5
+## Details:
+##   case=nochange
+##   DSN=VerticaDSN
+## 
+## Slot "type":
+## [1] "ODBC"
 ```
 
 Note that as mentioned before, nothing is yet executed in DB! If we would like to take a 'peek' at what the data look like, we could ask R to print `salaries`.
 
-```{r print salaries}
+
+```r
 salaries
+```
+
+```
+## Source: Vertica ODBC Connection
+## -----+DSN: VerticaDSN
+## -----+Host: 127.0.0.1
+## -----+DB Version: 07.01.0002
+## -----+ODBC Version: 03.80
+## From: Salaries [23,956 x 5]
+## 
+##    yearID teamID lgID  playerID salary
+## 1    1985    ATL   NL barkele01 870000
+## 2    1985    ATL   NL bedrost01 550000
+## 3    1985    ATL   NL benedbr01 545000
+## 4    1985    ATL   NL  campri01 633333
+## 5    1985    ATL   NL ceronri01 625000
+## 6    1985    ATL   NL chambch01 800000
+## 7    1985    ATL   NL dedmoje01 150000
+## 8    1985    ATL   NL forstte01 483333
+## 9    1985    ATL   NL garbege01 772000
+## 10   1985    ATL   NL harpete01 250000
+## ..    ...    ...  ...       ...    ...
 ```
 
 Now the query is actually executed in the database, and the first few rows can be seen in the result (dplyr automatically takes the HEAD and displays it).
@@ -151,17 +226,68 @@ Accessing data already in database is the presumed primary use-case. Another way
 
 We start with data from all NYC flights in the year 2013, which we'll get from the R package [`nycflights13`][7] (also maintained by Hadley Wickham). Importing the library imports an R data.frame, `flights`.
 
-```{r getting flights}
+
+```r
 library(nycflights13)
 # Peek at data.frame `flights`
 head(flights,10)
+```
+
+```
+## Source: local data frame [10 x 16]
+## 
+##    year month day dep_time dep_delay arr_time arr_delay carrier tailnum
+## 1  2013     1   1      517         2      830        11      UA  N14228
+## 2  2013     1   1      533         4      850        20      UA  N24211
+## 3  2013     1   1      542         2      923        33      AA  N619AA
+## 4  2013     1   1      544        -1     1004       -18      B6  N804JB
+## 5  2013     1   1      554        -6      812       -25      DL  N668DN
+## 6  2013     1   1      554        -4      740        12      UA  N39463
+## 7  2013     1   1      555        -5      913        19      B6  N516JB
+## 8  2013     1   1      557        -3      709       -14      EV  N829AS
+## 9  2013     1   1      557        -3      838        -8      B6  N593JB
+## 10 2013     1   1      558        -2      753         8      AA  N3ALAA
+## Variables not shown: flight (int), origin (chr), dest (chr), air_time
+##   (dbl), distance (dbl), hour (dbl), minute (dbl)
+```
+
+```r
 nrow(flights)
+```
+
+```
+## [1] 336776
 ```
 Now let's copy it over to Vertica using `copy_to` and see what we get:
 
-```{r copy flights}
+
+```r
 flights_vertica <- copy_to(vertica,flights,"flights")
 flights_vertica
+```
+
+```
+## Source: Vertica ODBC Connection
+## -----+DSN: VerticaDSN
+## -----+Host: 127.0.0.1
+## -----+DB Version: 07.01.0002
+## -----+ODBC Version: 03.80
+## From: flights [336,776 x 16]
+## 
+##    year month day dep_time dep_delay arr_time arr_delay carrier tailnum
+## 1  2013     1   1      517         2      830        11      UA  N14228
+## 2  2013     1   1      533         4      850        20      UA  N24211
+## 3  2013     1   1      542         2      923        33      AA  N619AA
+## 4  2013     1   1      544        -1     1004       -18      B6  N804JB
+## 5  2013     1   1      554        -6      812       -25      DL  N668DN
+## 6  2013     1   1      554        -4      740        12      UA  N39463
+## 7  2013     1   1      555        -5      913        19      B6  N516JB
+## 8  2013     1   1      557        -3      709       -14      EV  N829AS
+## 9  2013     1   1      557        -3      838        -8      B6  N593JB
+## 10 2013     1   1      558        -2      753         8      AA  N3ALAA
+## ..  ...   ... ...      ...       ...      ...       ...     ...     ...
+## Variables not shown: flight (dbl), origin (chr), dest (chr), air_time
+##   (dbl), distance (dbl), hour (dbl), minute (dbl)
 ```
 
 `copy_to` has automatically extracted the data types in the data.frame, converted them to a schema in Vertica, created the table in Vertica, and copied it over to the DB. It returns another tbl_vertica object, which we have named `flights_vertica`.
@@ -180,10 +306,33 @@ The most straightforward and basic operation is the ***select*** function. When 
 
 In our case, since we are only analyzing flight delay, the airports, and how these correspond to the dates (year is included but it's all 2013 so we'll discard the year column as well), we can simply select only those columns for now:
 
-```{r get columns}
+
+```r
 # Select columns month, day, arr_delay, and origin
 q1 <- select(flights_vertica, year, month, day, origin, arr_delay)
 q1
+```
+
+```
+## Source: Vertica ODBC Connection
+## -----+DSN: VerticaDSN
+## -----+Host: 127.0.0.1
+## -----+DB Version: 07.01.0002
+## -----+ODBC Version: 03.80
+## From: flights [336,776 x 5]
+## 
+##    year month day origin arr_delay
+## 1  2013     1   1    EWR        11
+## 2  2013     1   1    LGA        20
+## 3  2013     1   1    JFK        33
+## 4  2013     1   1    JFK       -18
+## 5  2013     1   1    LGA       -25
+## 6  2013     1   1    EWR        12
+## 7  2013     1   1    EWR        19
+## 8  2013     1   1    LGA       -14
+## 9  2013     1   1    JFK        -8
+## 10 2013     1   1    LGA         8
+## ..  ...   ... ...    ...       ...
 ```
 
 ### Filter: Select rows matching provided criteria
@@ -192,25 +341,89 @@ To answer the first question (determining which airport has the worst delays), I
 
 Since the `select` operation from before returned another dplyr tbl object, I can chain what I did there with the following `filter` operation by passing in `q1` as its first argument.
 
-```{r first filter}
+
+```r
 # Filter out flights in January and December
 q2 <- filter(q1, year == 2013, month > 1, month < 12)
 q2
 ```
+
+```
+## Source: Vertica ODBC Connection
+## -----+DSN: VerticaDSN
+## -----+Host: 127.0.0.1
+## -----+DB Version: 07.01.0002
+## -----+ODBC Version: 03.80
+## From: flights [281,637 x 5]
+## Filter: year == 2013, month > 1, month < 12 
+## 
+##    year month day origin arr_delay
+## 1  2013     2   1    LGA        NA
+## 2  2013     2   1    EWR        NA
+## 3  2013     2   1    EWR        NA
+## 4  2013     2   1    EWR        NA
+## 5  2013     2   1    EWR        NA
+## 6  2013     2   1    EWR        NA
+## 7  2013     2   1    EWR        NA
+## 8  2013     2   1    EWR        NA
+## 9  2013     2   1    EWR        NA
+## 10 2013     2   1    EWR        NA
+## ..  ...   ... ...    ...       ...
+```
 The data now printed out show flights beginning with the first of February. Just as when we retrieved a reference to a Vertica table, we can view the query associated with this filter operation:
 
-```{r q2 query}
+
+```r
 # Look at what we did in terms of SQL
 q2$query
+```
+
+```
+## <Query> SELECT "year" AS "year", "month" AS "month", "day" AS "day", "origin" AS "origin", "arr_delay" AS "arr_delay"
+## FROM "flights"
+## WHERE "year" = 2013.0 AND "month" > 1.0 AND "month" < 12.0
+## An object of class "VerticaConnection"
+## Slot "conn":
+## vRODBC Connection 5
+## Details:
+##   case=nochange
+##   DSN=VerticaDSN
+## 
+## Slot "type":
+## [1] "ODBC"
 ```
 As you might have expected, the query resulting from a **filter** involved a `WHERE` clause.
 
 You may notice that `arr_delay` has NA values for many rows, which are NULL in Vertica. We'll want to get rid of these rows with incomplete data using another `filter` operation on `q2`:
 
-```{r filter na}
+
+```r
 # Filter out NA rows
 q3 <- filter(q2,!is.na(arr_delay))
 q3
+```
+
+```
+## Source: Vertica ODBC Connection
+## -----+DSN: VerticaDSN
+## -----+Host: 127.0.0.1
+## -----+DB Version: 07.01.0002
+## -----+ODBC Version: 03.80
+## From: flights [273,928 x 5]
+## Filter: year == 2013, month > 1, month < 12, !is.na(arr_delay) 
+## 
+##    year month day origin arr_delay
+## 1  2013     2   1    EWR         4
+## 2  2013     2   1    EWR        -4
+## 3  2013     2   1    LGA         8
+## 4  2013     2   1    JFK       -10
+## 5  2013     2   1    JFK         9
+## 6  2013     2   1    EWR       -14
+## 7  2013     2   1    JFK        -1
+## 8  2013     2   1    LGA         9
+## 9  2013     2   1    LGA         0
+## 10 2013     2   1    LGA        -4
+## ..  ...   ... ...    ...       ...
 ```
 We do not have NA values anymore. dplyr has converted our R-style boolean expression on `arr_delay` for `NA` values into `NOT NULL` in SQL.
 
@@ -222,7 +435,8 @@ Astute SQL experts will recognize that these operations correspond to running AV
 
 The first thing to use is `group_by`, which constructs the grouping clause, followed by a summarise (which takes a group_by clause as its first argument) to generate our report. Along with our report, we would also like to create new columns for determining the number of flights belonging to each airport (we'll call this `count`), as well as the average delay for that airport (called delay).
 
-```{r group_by}
+
+```r
 # Group by airport (origin)
 by_origin <- group_by(q3, origin)
 q4 <- summarise(by_origin, 
@@ -236,10 +450,27 @@ The arguments on the right-hand side, `n` and `mean`, correspond to the vertica.
 
 Before I look at the result, let's finally rank these airports by worst (most delay) to best using `arrange`:
 
-```{r arrange delays}
+
+```r
 # Average delays by airport 
 q5 <- arrange(q4,desc(delay))
 q5
+```
+
+```
+## Source: Vertica ODBC Connection
+## -----+DSN: VerticaDSN
+## -----+Host: 127.0.0.1
+## -----+DB Version: 07.01.0002
+## -----+ODBC Version: 03.80
+## From: <derived table> [?? x 3]
+## Arrange: desc(delay) 
+## 
+##    origin count    delay
+## 1     EWR 98101 7.733132
+## 2     LGA 84702 5.370121
+## 3     JFK 91125 5.268258
+## ..    ...   ...      ...
 ```
 
 Pretty interesting stuff. From these results we see that, compared to other airports servicing the NYC region, EWR (Newark) had, by roughly two-and-a-half minutes, the worst average arrival delay in 2013.
@@ -247,8 +478,27 @@ Pretty interesting stuff. From these results we see that, compared to other airp
 ### Lazy execution
 Now let's look again at the query by accessing `$query` of a `tbl` object. We'll do it on our `q5` variable.
 
-```{r lazy exec query}
+
+```r
 q5$query
+```
+
+```
+## <Query> SELECT "origin", "count", "delay"
+## FROM (SELECT "origin", count(*) AS "count", AVG("arr_delay") AS "delay"
+## FROM "flights"
+## WHERE "year" = 2013.0 AND "month" > 1.0 AND "month" < 12.0 AND NOT("arr_delay"IS NULL)
+## GROUP BY "origin") AS "_W7"
+## ORDER BY "delay" DESC
+## An object of class "VerticaConnection"
+## Slot "conn":
+## vRODBC Connection 5
+## Details:
+##   case=nochange
+##   DSN=VerticaDSN
+## 
+## Slot "type":
+## [1] "ODBC"
 ```
 
 Note that this query is a complex query that has been built off of our initial tbl created by our `copy_to` statement since before we even started our data prep. What this means is that if I hadn't been printing all of the intermediate results in console, *nothing from q1 through q5 would have even touched the DB*.
@@ -257,13 +507,16 @@ Note that this query is a complex query that has been built off of our initial t
 
 What happens if I want to bring this back into the R console? Very easy, as it turns out, with `collect`. `collect` takes the saved query, executes it on the database, and brings the results back into R as the familiar data.frame.
 
-```{r collect}
+
+```r
 # Bring results back into R as a data.frame, then plot the results
 airport_delays <- collect(q5)
 barplot(airport_delays[["delay"]],horiz=TRUE,
       names.arg=airport_delays[["origin"]],
      xlab="Average delay in minutes",ylab="Airport")
 ```
+
+![plot of chunk collect](figure/collect-1.png) 
 ## Calling Vertica Functions
 
 In the previous sections, we saw the use of AVG (called as mean()) in dplyr) as well as COUNT(*) (invoked with n() in dplyr) with the `summarise` function. 
@@ -279,7 +532,8 @@ An aggregate function needs to be invoked with `summarise`, which necessitates t
 
 More generally, if you have a function `foo` that you wish to run on attribute `attr` in `tbl`, grouping by column `col`, with additional arguments `args` you would run:
 
-```{r eval=FALSE}
+
+```r
 grouped_by_col <- group_by(tbl,col)
 result <- summarise(grouped_by_col,new_col = foo(attr,args))
 ```
@@ -297,7 +551,8 @@ For this reason, the syntax for running a window function on Vertica through dpl
 
 In standard dplyr syntax, what is needed is a `group_by` call followed by a `mutate` or `filter`. If you wish to run a window function `winfun` on column `col` of table `tbl`, partitioning by `partcol`, you would invoke it in the following manner:
 
-```{r eval=FALSE}  
+
+```r
 grouped_by_partcol <- group_by(tbl,partcol)
 mutate(grouped_by_partcol, new_col = winfun(col,args))
 ```
@@ -307,13 +562,15 @@ Similarly, for convenience, you can specify your window size using `range`. This
 
 Using both of these arguments, with the assumption that we want to have the range between `min` and `max`, ordering by `ordercol`, the above flow is converted to the following in vertica.dplyr:
 
-```{r eval=FALSE}
+
+```r
 grouped_by_partcol <- group_by(tbl,partcol)
 mutate(grouped_by_partcol, new_col = winfun(col,args,range=c(min,max),order=ordercol))
 ```
 The following will also have the same effect, since `partition` will also allow you to specify partitioning:
 
-```{r eval=FALSE}
+
+```r
 mutate(tbl, new_col = winfun(col,args,range=c(min,max),partition=partcol,order=ordercol))
 ```
 
@@ -326,26 +583,53 @@ Let us return to our flights example, and grab our query `q1`. This time, we wan
 2. Average all delays for every unique calendar day
 3. To get a more "smoothed" result, run another average function over these delay values, with a running window width of 10 days (5 days prior to the current row, and 5 days after).
 
-```{r window example}
+
+```r
 c <- filter(select(q1,month,day,arr_delay),!is.na(arr_delay))
 calendar_day <- group_by(c,month,day)
 delay_by_day <- summarise(calendar_day,avg_delay = mean(arr_delay))
 delays <- mutate(delay_by_day, delay_smoothed = mean(avg_delay,range=c(-5,5),
 partition=NULL,order=c(month,day)))
 delays
-``` 
+```
+
+```
+## Source: Vertica ODBC Connection
+## -----+DSN: VerticaDSN
+## -----+Host: 127.0.0.1
+## -----+DB Version: 07.01.0002
+## -----+ODBC Version: 03.80
+## From: <derived table> [?? x 4]
+## Grouped by: month 
+## 
+##    month day  avg_delay delay_smoothed
+## 1      1   1 12.6510229      5.3091754
+## 2      1   2 12.6928879      3.8439629
+## 3      1   3  5.7333333      2.9600202
+## 4      1   4 -1.9328194      2.6017649
+## 5      1   5 -1.5258020      1.7517068
+## 6      1   6  4.2364294      1.1595273
+## 7      1   7 -4.9473118     -1.1738523
+## 8      1   8 -3.2275785     -0.9703107
+## 9      1   9 -0.2642777     -1.1605861
+## 10     1  10 -5.8988159     -0.9461796
+## ..   ... ...        ...            ...
+```
 
 Notice that we needed to set `partition=NULL` to clear the implicit `PARTITION BY MONTH,DAY` that would've been there from our earlier `group_by`.
 
 Now let's plot `delay_smoothed`.
 
-```{r delays}
+
+```r
 delays_local <- collect(delays)
 plot(delays_local[["delay_smoothed"]],xlab="Day of Year",
 ylab="Average delay 5 days prior and after (minutes)")
 lines(delays_local[["delay_smoothed"]])
 grid(nx=5)
 ```
+
+![plot of chunk delays](figure/delays-1.png) 
 
 Delays in flights appear to peak during the summer months, with smaller peaks during the winter months (holiday season), which somewhat follows intuition. Interestingly, between days 200 and 300 (August to November), flights are very on time, and even have a tendency to be a little early!
 
@@ -369,7 +653,8 @@ To do so, you need to create a character vector that describes the schema of you
 
 For example, to create a table named `New_Table`, with a schema of `INTEGER`, `VARCHAR`, and `VARCHAR` corresponding to columns `employeeID`, `name`, and `department`, I would be able to do so in the following way:
 
-```{r eval=FALSE} 
+
+```r
 types <- c("integer","varchar","varchar")
 names(types) <- c("employeeID","name","department")
 db_create_table(vertica$con,"New_Table",types)
@@ -387,7 +672,8 @@ for files with headings (*example: 1L*)
 5. Whether you would like to append this data to existing data in a table or overwrite it. (*example: TRUE*)
 6. The name of the table into which you would like to load the data (*example: mytable*)
 
-```{r eval=FALSE}
+
+```r
 db_load_from_file(vertica,"mytable","foo.csv",sep=",",skip=1L,append=TRUE)
 ```
 
@@ -397,13 +683,44 @@ Note that `mytable` will already have to exist, and the schema will have to be c
 
 You can view, check for, and drop tables by using `db_list_tables`, `db_has_table`, and `db_drop_table`, respectively:
 
-```{r list has table}
+
+```r
 db_list_tables(vertica$con)
+```
+
+```
+##  [1] AllstarFull         AwardsManagers      AwardsPlayers      
+##  [4] AwardsShareManagers AwardsSharePlayers  bank_original      
+##  [7] compute_test_table  d1                  d2                 
+## [10] ddd                 dddd                ddddd              
+## [13] dddddd              Fielding            FieldingOF         
+## [16] FieldingPost        flights             HallOfFame         
+## [19] LahmanData          Managers            ManagersHalf       
+## [22] Master              Pitching            PitchingPost       
+## [25] ref_join            Salaries            Schools            
+## [28] SchoolsPlayers      SeriesPost          TeamsFranchises    
+## [31] tempName            test                tsempName          
+## 33 Levels: AllstarFull AwardsManagers ... tsempName
+```
+
+```r
 db_has_table(vertica$con,"foobar")
+```
+
+```
+## [1] FALSE
+```
+
+```r
 db_has_table(vertica$con,"Salaries")
 ```
 
-```{r eval=FALSE}
+```
+## [1] TRUE
+```
+
+
+```r
 db_drop_table(vertica$con,"Salaries")
 ```
 
@@ -411,15 +728,43 @@ db_drop_table(vertica$con,"Salaries")
 
 Queries (tbl objects) can be explained using `explain`:
 
-```{r explain} 
+
+```r
 explain(q5)
+```
+
+```
+## <SQL>
+## SELECT "origin", "count", "delay"
+## FROM (SELECT "origin", count(*) AS "count", AVG("arr_delay") AS "delay"
+## FROM "flights"
+## WHERE "year" = 2013.0 AND "month" > 1.0 AND "month" < 12.0 AND NOT("arr_delay"IS NULL)
+## GROUP BY "origin") AS "_W7"
+## ORDER BY "delay" DESC
+## 
+## 
+## <PLAN>
+## ------------------------------ QUERY PLAN DESCRIPTION: ------------------------------
+## EXPLAIN SELECT "origin", "count", "delay" FROM (SELECT "origin", count(*) AS "count", AVG("arr_delay") AS "delay" FROM "flights" WHERE "year" = 2013.0 AND "month" > 1.0 AND "month" < 12.0 AND NOT("arr_delay"IS NULL) GROUP BY "origin") AS "_W7" ORDER BY "delay" DESC
+## Access Path:+-SORT [Cost: 220K, Rows: 3] (PATH ID: 1)
+## |  Order: _W7.delay DESC
+## | +---> GROUPBY HASH (LOCAL RESEGMENT GROUPS) [Cost: 220K, Rows: 3] (PATH ID: 3)
+## | |      Aggregates: max(flights.origin), count(*), sum_float(flights.arr_delay), count(flights.arr_delay)
+## | |      Group By: collation(flights.origin, 'en_US')
+## | | +---> STORAGE ACCESS for flights [Cost: 219K, Rows: 280K] (PATH ID: 4)
+## | | |      Projection: public.flights_super
+## | | |      Materialize: flights.arr_delay, flights.origin
+## | | |      Filter: (flights.year = 2013.0)
+## | | |      Filter: ((flights.month > 1.0) AND (flights.month < 12.0))
+## | | |      Filter: (NOT (flights.arr_delay IS NULL))
 ```
 
 ### Saving queries to views and tables
 
 `compute` and `db_save_view` will allow you to save your `tbl` objects to tables and views in Vertica, respectively. Once saved as a view or table, they can easily be transported to Distributed R via `tbl2dframe` and `tbl2darray` (described in the following section). For a given `tbl` named `foo`:
 
-```{r eval=FALSE}
+
+```r
 # Save to a table named "mytable"
 compute(foo,name="mytable")
 # Save to a view named "myview"
@@ -437,7 +782,8 @@ You can transform a `tbl_vertica` that uses *either* vRODBC or RJDBC, but the Ve
 
 Additional parameters to `tbl2dframe` and `tbl2darray` exist, such as the number of partitions for the constructed dframe or darray; please see the manual page for details.
 
-```{r eval=FALSE}
+
+```r
 # Example 1, using vRODBC-backed tbl_vertica
 foo <- tbl(vertica,"myTable")
 my.dframe <- tbl2dframe(foo)

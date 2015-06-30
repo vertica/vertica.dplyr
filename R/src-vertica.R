@@ -278,6 +278,12 @@ copy_to.src_vertica <- function(dest, df, name = deparse(substitute(df)),
 }
 
 #' @export
+db_create_table.src_vertica <- function(src, table, types, temporary=FALSE, ...)
+{
+  db_create_table(src$con, table, types, temporary, ...)
+}
+
+#' @export
 db_create_table.VerticaConnection <- function(con, table, types, temporary=FALSE, ...) {
   assert_that(is.string(table), is.character(types))
   if(db_has_table(con,table)) stop("Table name already exists")
@@ -291,11 +297,6 @@ db_create_table.VerticaConnection <- function(con, table, types, temporary=FALSE
   invisible(send_query(con@conn, sql))
 
   if(!db_has_table(con,table)) stop("Could not create table; are the data types specified in Vertica-compatible format?")
-}
-
-#' @export
-db_create_table.src_vertica <- function(src, table, types, temporary=FALSE, ...) {
-  db_create_table(src$con, table, types, temporary, ...)
 }
 
 # Currently slow for bulk insertions
@@ -410,6 +411,11 @@ db_has_table.VerticaConnection <- function(con, table) {
 }
 
 #' @export
+db_drop_table.src_vertica <- function(src, table, force = FALSE, ...) {
+  db_drop_table(src$con, table, force, ...)
+}
+
+#' @export
 db_drop_table.VerticaConnection <- function(con, table, force = FALSE, ...) {
   assert_that(is.string(table))
 
@@ -421,8 +427,8 @@ db_drop_table.VerticaConnection <- function(con, table, force = FALSE, ...) {
 }
 
 #' @export
-db_drop_table.src_vertica <- function(src, table, force = FALSE, ...) {
-  db_drop_table(src$con, table, force, ...)
+db_drop_view.src_vertica <- function(src, view) {
+  db_drop_view(src$con, view)
 }
 
 #' Like db_drop_table, but for views.
@@ -447,19 +453,12 @@ db_drop_view.VerticaConnection <- function(con, view) {
 }
 
 #' @export
-db_drop_view.src_vertica <- function(src, view) {
-  db_drop_view(src$con,view)
-}
-
-# Get names of columns from sql
-#' @export
 db_query_fields.VerticaConnection <- function(con, sql, ...){
   fields <- paste0("SELECT * FROM ",sql," WHERE 0=1")
   qry <- send_query(con@conn, fields, useGetQuery=TRUE)
   names(qry)
 }
 
-# Count rows
 #' @export
 db_query_rows.VerticaConnection <- function(con, sql, ...) {
   from <- paste0("(",sql,")")
