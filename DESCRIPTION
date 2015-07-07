@@ -8,4 +8,5 @@ Maintainer: HP Vertica Analytics Team <distributedRTeam@external.groups.hp.com>
 Description: Adds Vertica database backend support with the dplyR package
 License: GPL (>= 2) | file LICENSE
 Depends: methods, assertthat, dplyr
-Suggests: vRODBC, RJDBC, HPdata
+Suggests: vRODBC, RJDBC, HPdata, knitr, rmarkdown
+VignetteBuilder: knitr
