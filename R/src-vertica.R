@@ -483,8 +483,9 @@ db_explain.VerticaConnection <- function(con, sql, ...) {
 
 #' @export
 sql_escape_ident.VerticaConnection <- function(con, x) {
-  x
+  sql_quote(x,' ')
 }
+
 
 # Analyze for performance
 #' @export
