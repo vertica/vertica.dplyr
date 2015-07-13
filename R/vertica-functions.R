@@ -16,7 +16,39 @@
 #Suite 330, Boston, MA 02111-1307 USA
 #####################################################################
 
-## This file defines the scalar, window, and aggregate functions that are invokable in Vertica
+## This file defines the scalar, window, and aggregate functions that are invokable in Vertica, as well as utility functions for R-UDxes
+
+#' This function shows to the user the names of the funtions, their type, as well as the return and input data types.
+#'
+#' @param src The src_vertica instance from which to query for UDxes.
+#' @return A data frame containing four columns: function name, function type, output data type(s), and input data type(s).
+#' @examples
+#' \dontrun{
+#' vertica <- src_vertica("VerticaDSN")
+#' UDxes <- list_udx(vertica)
+#' }
+#' @export
+list_udx <- function(src) {
+  list_udx_query <- "SELECT schema_name,function_name,procedure_type,function_return_type,function_argument_type FROM user_functions"
+
+ if(src$con@type=="ODBC") {
+    res <- sqlQuery(src$con@conn,list_udx_query)
+  }
+  else {
+    res <- dbGetQuery(src$con@conn,list_udx_query)
+  }
+
+    function.names <- mapply(function(x,y) {
+      if(as.character(x) != "public") {
+        y <- paste0(as.character(x),".",as.character(y))
+      }
+      as.character(y)
+    },res[[1]],res[[2]])
+
+    out <- cbind(function.names,res[,c(3,4,5)])
+    names(out) <- c("UDF Name","Type","Return Type","Argument Type(s)")
+    out
+}
 
 # Generic Vertica window function sql constructor with range and order by parameters.
 vertica_win_func <- function(f) {
