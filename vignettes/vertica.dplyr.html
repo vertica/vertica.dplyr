@@ -281,6 +281,20 @@ hr {
 library(vertica.dplyr)
 </code></pre>
 
+<pre><code>## Loading required package: assertthat
+## Loading required package: dplyr
+## 
+## Attaching package: &#39;dplyr&#39;
+## 
+## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     filter, lag
+## 
+## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, setequal, union
+</code></pre>
+
 <p>Note that a few of the imported dplyr functions have names that overwrite their R-base equivalents.</p>
 
 <h2>Connect to HP Vertica</h2>
@@ -340,7 +354,7 @@ vertica_odbc
 ##   tsempName
 </code></pre>
 
-<p>as well as whether or not <code>dsn</code> is required as a parameter for <code>tbl2dframe</code> and <code>tbl2darray</code>.</p>
+<p>as well as whether or not <code>dsn</code> is required as a parameter for <code>tbl2dframe</code>, <code>tbl2darray</code>, and <code>tbl2darrays</code>.</p>
 
 <p>As you can see, both connection options print information about the connection and list the current user tables (and views) found in the database. For the rest of this example, the ODBC version is used and it is called <code>vertica</code>:</p>
 
@@ -907,7 +921,7 @@ for files with headings (<em>example: 1L</em>)</li>
 
 <h3>Saving queries to views and tables</h3>
 
-<p><code>compute</code> and <code>db_save_view</code> allow you to save your <code>tbl</code> objects to tables and views in HP Vertica, respectively. Once saved as a view or table, they can be transported to Distributed R via <code>tbl2dframe</code> and <code>tbl2darray</code> (described in the following section). For a given <code>tbl</code> named <code>foo</code>:</p>
+<p><code>compute</code> and <code>db_save_view</code> allow you to save your <code>tbl</code> objects to tables and views in HP Vertica, respectively. Once saved as a view or table, they can be transported to Distributed R via <code>tbl2dframe</code>,<code>tbl2darray</code>, and <code>tbl2darrays</code> (described in the following section). For a given <code>tbl</code> named <code>foo</code>:</p>
 
 <pre><code class="r"># Save to a table named &quot;mytable&quot;
 compute(foo,name=&quot;mytable&quot;)
@@ -915,17 +929,17 @@ compute(foo,name=&quot;mytable&quot;)
 db_save_view(foo,name=&quot;myview&quot;)
 </code></pre>
 
-<h2>Using HP Distributed R&#39;s Native-Data-Loader with tbl2darray and tbl2dframe (requires vRODBC)</h2>
+<h2>Using HP Distributed R&#39;s Native-Data-Loader with tbl2darray, tbl2darrays, and tbl2dframe (requires vRODBC)</h2>
 
 <p>There exists a method of <a href="http://en.wikipedia.org/wiki/Distributed_R#Integration_with_databases">fast parallel transfer</a> between the HP Vertica database and HP Distributed R. This technique utilizes several parallel socket connections, through which data are pushed from HP Vertica in a data-locality-aware manner. </p>
 
-<p>The functionality is available in the <a href="http://www.vertica.com/wp-content/uploads/2014/06/HPdata-Manual.pdf">HPdata</a> package, along with a standard ODBC connector interface. <code>HPdata</code> is another <em>soft</em> dependency of vertica.dplyr, meaning that vertica.dplyr only attempts to load it when either <code>tbl2darray</code> or <code>tbl2dframe</code> is invoked.</p>
+<p>The functionality is available in the <a href="http://www.vertica.com/wp-content/uploads/2014/06/HPdata-Manual.pdf">HPdata</a> package, along with a standard ODBC connector interface. <code>HPdata</code> is another <em>soft</em> dependency of vertica.dplyr, meaning that vertica.dplyr only attempts to load it when <code>tbl2darray</code>, <code>tbl2darrays</code>, or <code>tbl2dframe</code> is invoked.</p>
 
-<p>It is possible to convert a <code>tbl_vertica</code> object to a Distributed R <code>dframe</code> or <code>darray</code>. You must provide a <code>tbl_vertica</code> object to either <code>tbl2darray</code> or <code>tbl2dframe</code> if using a vRODBC-backed tbl_vertica, or the <code>tbl_vertica</code> object and a <code>dsn</code> reference for ODBC if using a RJDBC-backed tbl_vertica.</p>
+<p>It is possible to convert a <code>tbl_vertica</code> object to a Distributed R <code>dframe</code> or <code>darray</code>. You must provide a <code>tbl_vertica</code> object to <code>tbl2darray</code>, <code>tbl2darrays</code>, or <code>tbl2dframe</code> if using a vRODBC-backed tbl_vertica, or the <code>tbl_vertica</code> object and a <code>dsn</code> reference for ODBC if using a RJDBC-backed tbl_vertica.</p>
 
 <p>You can transform a <code>tbl_vertica</code> that uses <em>either</em> vRODBC or RJDBC, but the HP Vertica connector uses vRODBC; therefore, an extra <code>dsn</code> argument is needed for the RJDBC case.</p>
 
-<p>Additional parameters to <code>tbl2dframe</code> and <code>tbl2darray</code> exist, such as the number of partitions for the constructed dframe or darray. See the manual page for details.</p>
+<p>Additional parameters to <code>tbl2dframe</code>, <code>tbl2darrays</code>, and <code>tbl2darray</code> exist, such as the number of partitions for the constructed dframe or darray. See the manual page for details.</p>
 
 <pre><code class="r"># Example 1, using vRODBC-backed tbl_vertica
 foo &lt;- tbl(vertica,&quot;myTable&quot;)
@@ -980,7 +994,7 @@ my.darray &lt;- tbl2darray(bar,dsn=&quot;VerticaDSN&quot;,npartitions=4)
 
 <p>For descriptions of and help for these functions, refer to the appropriate section(s) in the <a href="http://www.vertica.com/hp-vertica-documentation/">HP Vertica User Manual</a>. </p>
 
-<h2>Supported dplyr-base functions</h2>
+<h2>Verified dplyr-base functions</h2>
 
 <p>The following functions have been tested and verified:</p>
 
@@ -1002,6 +1016,15 @@ my.darray &lt;- tbl2darray(bar,dsn=&quot;VerticaDSN&quot;,npartitions=4)
 </ul>
 
 <p>See the <a href="http://cran.r-project.org/web/packages/dplyr/index.html">dplyr docs</a> for how these work. Many others may be functional, but have not been verified.</p>
+
+<h2>Verified Vertica.dplyr functions</h2>
+
+<ul>
+<li>db_drop_view</li>
+<li>db_save_view</li>
+<li>tbl2darray</li>
+<li>tbl2dframe</li>
+</ul>
 
 <h2>Auxiliary functions</h2>
 

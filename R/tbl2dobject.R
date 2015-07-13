@@ -51,9 +51,42 @@
 #' @export
 tbl2darray <- function(table, dsn, features, npartitions, verticaConnector=TRUE, loadPolicy="local") {
   .attemptLoad("HPdata")
-  .invokeLoader(dsn=.checkAndStart(table,dsn),table,features,npartitions,verticaConnector,loadPolicy,type="darray")
+  .invokeLoader(dsn=.checkAndStart(table,dsn),table=table,features=features,npartitions=npartitions,verticaConnector=verticaConnector,loadPolicy=loadPolicy,type="darray")
 }
       
+#' Converts a dplyr tbl object to a pair of darrays in Distributed R which correspond to the responses and 
+#' predictors of a predictive model. It is assumed that samples (including responses and predictors) are 
+#' stored in a single table.
+#'
+#' This requires distributedR and HPData and will attempt to load them. If Distributed R is not already running, it will start it.
+#' Internally, this function simply saves the tbl reference as a view in Vertica and then uses the Vertica Loader to move data into
+#' Distributed R, and then deletes the view from database. Note that if you do not use the Vertica Native Data Loader, your table
+#' must have a 'rowid' column for this to work (see ?HPdata::db2darrays for more information).
+#'
+#' @param table The local R-variable name of the tbl_vertica object to be converted to darrays.
+#' @param dsn The name of the DSN as specified in the ODBC.INI file. If an ODBC connection 
+#' is already active, then the DSN of that connection will be used. If not (JDBC is being used), this field will be 
+#' required.
+#' @param resp the list of the column names corresponding to responses.
+#' @param pred this is an optional argument to specify list of the column names corresponding to predictors. If this argument is not specfied or is empty, the function will load all columns of the table or view excluding the column specified in resp argument.
+#' @param npartitions this optional argument specifies the desired number of splits (partitions) in the
+#' dobject.
+#' @param verticaConnector TRUE to use the Vertica Connector for Distributed R. If FALSE, your table must 
+#' include a 'rowid' column. See the manual page for HPdata::db2darrays for more information.
+#' @param loadPolicy "local" or "uniform". Please see help doc for db2darrays in package HPdata.
+#' Please read the details for more information.
+#' @return  Y : the darray of responses; X : the darray of predictors 
+#' @examples
+#' \dontrun{
+#' my_darrays <- tbl2darrays(my_table,resp=list("some_column"))
+#' }
+#' 
+#' @export
+tbl2darrays <- function(table, dsn, resp, pred, npartitions, verticaConnector=TRUE, loadPolicy="local") {
+  .attemptLoad("HPdata")
+  .invokeLoader(dsn=.checkAndStart(table,dsn),table=table,resp=resp,pred=pred,npartitions=npartitions,verticaConnector=verticaConnector,loadPolicy=loadPolicy,type="darrays")
+}
+
 #' Converts a dplyr tbl object to a dframe in Distributed R.
 #'
 #' This requires distributedR and HPData and will attempt to load them. If Distributed R is not already running, it will start it.
@@ -84,24 +117,36 @@ tbl2darray <- function(table, dsn, features, npartitions, verticaConnector=TRUE,
 #' @export
 tbl2dframe <- function(table, dsn, features, npartitions, verticaConnector=TRUE, loadPolicy="local") {
   .attemptLoad("HPdata")
-  .invokeLoader(dsn=.checkAndStart(table,dsn),table,features,npartitions,verticaConnector,loadPolicy,type="dframe")
+  .invokeLoader(dsn=.checkAndStart(table,dsn),table=table,features=features,npartitions=npartitions,verticaConnector=verticaConnector,loadPolicy=loadPolicy,type="dframe")
 }
 
-.invokeLoader <- function(dsn,table,features,npartitions,verticaConnector,loadPolicy,type){
+.invokeLoader <- function(dsn,table,features,npartitions,verticaConnector,loadPolicy,type,resp,pred){
   viewname <- dplyr:::random_table_name()
   suppressMessages(db_save_view(table,viewname,temporary=FALSE))
   sql <- build_sql("DROP VIEW ", ident(table),
     con = table$src$con)
   on.exit(invisible(db_drop_view(table$src$con,viewname)))
 
-  loader <- ifelse(type=="dframe","suppressMessages(db2dframe(viewname,
+  if(type=="dframe") {
+    loader <- "suppressMessages(db2dframe(viewname,
                      dsn,features,npartitions,
                      verticaConnector=verticaConnector,
-                     loadPolicy=loadPolicy))",
-                     "suppressMessages(db2darray(viewname,
+                     loadPolicy=loadPolicy))"
+  } 
+  
+  if(type=="darray") {
+    loader <- "suppressMessages(db2darray(viewname,
                      dsn,features,npartitions,
                      verticaConnector=verticaConnector,
-                     loadPolicy=loadPolicy))")
+                     loadPolicy=loadPolicy))"
+  }
+
+  if(type=="darrays") {
+    loader <- "suppressMessages(db2darrays(viewname,
+                     dsn,resp=resp,pred=pred,npartitions,
+                     verticaConnector=verticaConnector,
+                     loadPolicy=loadPolicy))"
+  }
 
   tryCatch(eval(parse(text=loader)),error = 
         function(e) {

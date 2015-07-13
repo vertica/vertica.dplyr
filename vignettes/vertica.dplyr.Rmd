@@ -95,7 +95,7 @@ vertica_odbc
 vertica_jdbc
 ```
 
-as well as whether or not `dsn` is required as a parameter for `tbl2dframe` and `tbl2darray`.
+as well as whether or not `dsn` is required as a parameter for `tbl2dframe`, `tbl2darray`, and `tbl2darrays`.
 
 As you can see, both connection options print information about the connection and list the current user tables (and views) found in the database. For the rest of this example, the ODBC version is used and it is called `vertica`:
 
@@ -408,7 +408,7 @@ explain(q5)
 
 ### Saving queries to views and tables
 
-`compute` and `db_save_view` allow you to save your `tbl` objects to tables and views in HP Vertica, respectively. Once saved as a view or table, they can be transported to Distributed R via `tbl2dframe` and `tbl2darray` (described in the following section). For a given `tbl` named `foo`:
+`compute` and `db_save_view` allow you to save your `tbl` objects to tables and views in HP Vertica, respectively. Once saved as a view or table, they can be transported to Distributed R via `tbl2dframe`,`tbl2darray`, and `tbl2darrays` (described in the following section). For a given `tbl` named `foo`:
 
 ```{r eval=FALSE}
 # Save to a table named "mytable"
@@ -417,16 +417,16 @@ compute(foo,name="mytable")
 db_save_view(foo,name="myview")
 ```
 
-## Using HP Distributed R's Native-Data-Loader with tbl2darray and tbl2dframe (requires vRODBC)
+## Using HP Distributed R's Native-Data-Loader with tbl2darray, tbl2darrays, and tbl2dframe (requires vRODBC)
 There exists a method of [fast parallel transfer][3] between the HP Vertica database and HP Distributed R. This technique utilizes several parallel socket connections, through which data are pushed from HP Vertica in a data-locality-aware manner. 
 
-The functionality is available in the [HPdata][4] package, along with a standard ODBC connector interface. `HPdata` is another *soft* dependency of vertica.dplyr, meaning that vertica.dplyr only attempts to load it when either `tbl2darray` or `tbl2dframe` is invoked.
+The functionality is available in the [HPdata][4] package, along with a standard ODBC connector interface. `HPdata` is another *soft* dependency of vertica.dplyr, meaning that vertica.dplyr only attempts to load it when `tbl2darray`, `tbl2darrays`, or `tbl2dframe` is invoked.
 
-It is possible to convert a `tbl_vertica` object to a Distributed R `dframe` or `darray`. You must provide a `tbl_vertica` object to either `tbl2darray` or `tbl2dframe` if using a vRODBC-backed tbl_vertica, or the `tbl_vertica` object and a `dsn` reference for ODBC if using a RJDBC-backed tbl_vertica.
+It is possible to convert a `tbl_vertica` object to a Distributed R `dframe` or `darray`. You must provide a `tbl_vertica` object to `tbl2darray`, `tbl2darrays`, or `tbl2dframe` if using a vRODBC-backed tbl_vertica, or the `tbl_vertica` object and a `dsn` reference for ODBC if using a RJDBC-backed tbl_vertica.
 
 You can transform a `tbl_vertica` that uses *either* vRODBC or RJDBC, but the HP Vertica connector uses vRODBC; therefore, an extra `dsn` argument is needed for the RJDBC case.
 
-Additional parameters to `tbl2dframe` and `tbl2darray` exist, such as the number of partitions for the constructed dframe or darray. See the manual page for details.
+Additional parameters to `tbl2dframe`, `tbl2darrays`, and `tbl2darray` exist, such as the number of partitions for the constructed dframe or darray. See the manual page for details.
 
 ```{r eval=FALSE}
 # Example 1, using vRODBC-backed tbl_vertica
@@ -480,7 +480,7 @@ Functions that are not listed here have not been tested, but may be invokable by
 
 For descriptions of and help for these functions, refer to the appropriate section(s) in the [HP Vertica User Manual][5]. 
 
-## Supported dplyr-base functions
+## Verified dplyr-base functions
 
 The following functions have been tested and verified:
 
@@ -500,6 +500,13 @@ The following functions have been tested and verified:
 * %>%
 
 See the [dplyr docs][1] for how these work. Many others may be functional, but have not been verified.
+
+## Verified Vertica.dplyr functions
+
+* db_drop_view
+* db_save_view
+* tbl2darray
+* tbl2dframe
 
 ## Auxiliary functions
 The following is a list of functions that are used to implement many of the functions listed above in dplyr, and are, therefore, exported as part of the package for dispatch in certain generic functions. They may be used, but are not meant to be directly invoked, and are thus not documented for their behavior:
