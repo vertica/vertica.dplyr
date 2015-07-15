@@ -1,11 +1,11 @@
 Package: vertica.dplyr
 Type: Package
-Title: A dplyR connector for Vertica
-Version: 0.1
-Date: 2015-04-27
+Title: A dplyr connector for Vertica
+Version: 0.4.2
+Date: 2015-07-15
 Author: HP Vertica Analytics Team
 Maintainer: HP Vertica Analytics Team <distributedRTeam@external.groups.hp.com>
-Description: Adds Vertica database backend support with the dplyR package
+Description: Adds Vertica database backend support with the dplyr package
 License: GPL (>= 2) | file LICENSE
 Depends: methods, assertthat, dplyr
 Suggests: vRODBC, RJDBC, HPdata, knitr, rmarkdown
