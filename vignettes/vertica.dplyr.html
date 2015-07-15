@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 
-<title>Vertica.dplyr</title>
+<title>vertica.dplyr</title>
 
 <script type="text/javascript">
 window.onload = function() {
@@ -201,9 +201,9 @@ hr {
 </head>
 
 <body>
-<h1>Vertica.dplyr</h1>
+<h1>vertica.dplyr</h1>
 
-<p>Vertica.dplyr is an R package developed by Hewlett-Packard that provides HP Vertica backend support for the <a href="http://cran.r-project.org/web/packages/dplyr/index.html">dplyr</a> package. dplyr provides tools for data wrangling using R data frames. With Vertica.dplyr, users can now do the same in Vertica tables without moving the data into R. Vertica.dplyr also provides the following additional features to simplify working with HP Vertica and HP Distributed R: </p>
+<p>vertica.dplyr is an R package developed by Hewlett-Packard that provides HP Vertica backend support for the <a href="http://cran.r-project.org/web/packages/dplyr/index.html">dplyr</a> package. dplyr provides tools for data wrangling using R data frames. With vertica.dplyr, users can now do the same in Vertica tables without moving the data into R. vertica.dplyr also provides the following additional features to simplify working with HP Vertica and HP Distributed R: </p>
 
 <ul>
 <li><a href="http://www.vertica.com/wp-content/uploads/2014/06/HPdata-Manual.pdf">HPdata</a>-style functions (data transport from HP Vertica to HP Distributed R via the data loader), namely tbl2d<strong>object</strong> (where <strong>object</strong> is either <strong>array</strong> or <strong>frame</strong>), that are compatible with dplyr tbl objects.</li>
@@ -255,9 +255,9 @@ hr {
 
 <h3>HP Vertica Integration</h3>
 
-<p>For data that resides in a database, dplyr provides an interface to access tables and manipulate them directly inside the database as though they were local data frames. The dplyr package provides support for MySQL, Postgres, BigQuery, and SQLite backends. Vertica.dplyr enables dplyr to work with HP Vertica.</p>
+<p>For data that resides in a database, dplyr provides an interface to access tables and manipulate them directly inside the database as though they were local data frames. The dplyr package provides support for MySQL, Postgres, BigQuery, and SQLite backends. vertica.dplyr enables dplyr to work with HP Vertica.</p>
 
-<p>Vertica.dplyr adds dplyr-support for HP Vertica, as well as serving as the basic &ldquo;intermediary&rdquo; between R (and HP Distributed R) and HP Vertica, which includes data preparation, data transfer, and HP Vertica function invocation. </p>
+<p>vertica.dplyr adds dplyr-support for HP Vertica, as well as serving as the basic &ldquo;intermediary&rdquo; between R (and HP Distributed R) and HP Vertica, which includes data preparation, data transfer, and HP Vertica function invocation. </p>
 
 <h2>Obtaining the Package</h2>
 
@@ -271,7 +271,7 @@ hr {
 
 <p>You also need access to an HP Vertica database (must be configured separately), as well as either (or both) the ODBC or JDBC HP Vertica driver(s) installed and configured on your host machine (the one that runs vertica.dplyr). Please refer to external documentation for help with these steps. A guide is available at <a href="http://my.vertica.com/docs/DISTR/1.1.x/HTML/index.htm#DistributedR/InstallingDistributedR/Installing_vRODBC/Installing_vRODBC.htm">this</a> link.</p>
 
-<h1>Using Vertica.dplyr</h1>
+<h1>Using vertica.dplyr</h1>
 
 <p>The following example demonstrates some of the fundamental data manipulation features of vertica.dplyr (and dplyr). </p>
 
@@ -365,7 +365,7 @@ class(vertica)
 <pre><code>## [1] &quot;src_vertica&quot; &quot;src_sql&quot;     &quot;src&quot;
 </code></pre>
 
-<h2>Vertica.dplyr &ldquo;tables&rdquo; (tbl_vertica)</h2>
+<h2>vertica.dplyr &ldquo;tables&rdquo; (tbl_vertica)</h2>
 
 <p>The following are some basic principles of a &ldquo;tbl&rdquo;:</p>
 
@@ -951,7 +951,7 @@ bar &lt;- mutate(foo,col=col1+col2)
 my.darray &lt;- tbl2darray(bar,dsn=&quot;VerticaDSN&quot;,npartitions=4)
 </code></pre>
 
-<h2>List of tested HP Vertica analytic functions and their Vertica.dplyr names</h2>
+<h2>List of tested HP Vertica analytic functions and their vertica.dplyr names</h2>
 
 <p>Functions that are not listed here have not been tested, but may be invokable by using the HP Vertica function name from within vertica.dplyr.</p>
 
@@ -1017,7 +1017,7 @@ my.darray &lt;- tbl2darray(bar,dsn=&quot;VerticaDSN&quot;,npartitions=4)
 
 <p>See the <a href="http://cran.r-project.org/web/packages/dplyr/index.html">dplyr docs</a> for how these work. Many others may be functional, but have not been verified.</p>
 
-<h2>Verified Vertica.dplyr functions</h2>
+<h2>Verified vertica.dplyr functions</h2>
 
 <ul>
 <li>db_drop_view</li>
