@@ -28,8 +28,21 @@
 #' UDxes <- list_udx(vertica)
 #' }
 #' @export
-list_udx <- function(src) {
-  list_udx_query <- "SELECT schema_name,function_name,procedure_type,function_return_type,function_argument_type FROM user_functions"
+list_udx <- function(src,type=NULL) {
+  
+  if(is.null(type)) where <- "1=1"
+  else if(type == "transform") {
+    where <- "procedure_type='Transform'" 
+  } else if (type == "aggregate") {
+    where <- "procedure_type='Aggregate'"
+  }
+   else if (type == "scalar") {
+    where <- "procedure_type='Scalar'"
+  } else {
+    where <- "1=1"
+  }
+
+  list_udx_query <- paste0("SELECT * FROM (SELECT schema_name,function_name,DECODE(procedure_type,\'User Defined Function\',\'Scalar\',\'User Defined Transform\',\'Transform\',\'User Defined Aggregate \',\'Aggregate\',\'other\') AS procedure_type,function_return_type,function_argument_type FROM user_functions) as foo WHERE ", where)
 
  if(src$con@type=="ODBC") {
     res <- sqlQuery(src$con@conn,list_udx_query)
@@ -70,6 +83,44 @@ vertica_win_func <- function(f) {
     }
     if(!is.null(range)) range <- as.numeric(range)
     over(build_sql(sql(f), list(...)), partition, order, frame = range)
+  }
+}
+
+vertica_udf <- function(f,transform=FALSE) {
+  force(f)
+  if(!transform) {
+    function(...,params=list()) {
+      udf <- build_sql("USING PARAMETERS ", dplyr:::sql_vector(params))
+    
+      args <- list(...)
+      print(class(args[[length(args)]]))
+      args[[length(args)]] <- sql(paste(args[[length(args)]],udf))
+
+      build_sql(sql(f),args)
+    }
+  }
+
+  else {
+
+  function(..., partition=dplyr:::partition_group(),order=dplyr:::partition_group(), range=NULL) {
+    if(is.character(range)) {
+      range[1] = tryCatch({val=eval(parse(text=range[1]))
+                           assert_that(!is.na(val))
+                           val},
+                 error = function(e){
+                 range[1] = -Inf
+               })
+      range[2] = tryCatch({val=eval(parse(text=range[2]))
+                           assert_that(!is.na(val))
+                           val},
+                 error = function(e){
+                 range[2] = Inf
+               }) 
+    }
+    if(!is.null(range)) range <- as.numeric(range)
+    over(build_sql(sql(f), list(...)), partition, order, frame = range)
+  }
+
   }
 }
 
@@ -129,3 +180,49 @@ vertica_agg_func <- sql_translator(
   ,bitwOr = sql_prefix("bit_or",1)
   ,bitwXor = sql_prefix("bit_xor",1)
 )
+
+# Powers translations of scalar and window functions
+#' @export
+src_translate_env.src_vertica <- function(x) {
+  sql_variant(scalar = vertica_scalar_func,
+  window = vertica_window_func,
+  aggregate = vertica_agg_func
+  )
+}
+
+import_udxes <- function(src) {
+  aggregates <- list_udx(src,"aggregate")
+  scalars <- list_udx(src,"scalar")
+  transforms <- list_udx(src,"transform")
+  
+  agg_funs <- mapply(vertica_udf,
+                  as.list(as.character(aggregates[["UDF Name"]])),
+                  FALSE)
+
+  names(agg_funs) <- as.character(aggregates[["UDF Name"]])  
+
+  scalar_funs <- mapply(vertica_udf,
+                  as.list(as.character(scalars[["UDF Name"]])),
+                  FALSE)
+
+  names(scalar_funs) <- as.character(scalars[["UDF Name"]])  
+
+  transform_funs <- mapply(vertica_udf,
+                  as.list(as.character(transforms[["UDF Name"]])),
+                  TRUE)
+
+  names(transform_funs) <- as.character(transforms[["UDF Name"]])  
+  
+  vertica_agg_func <- list2env(agg_funs, dplyr:::copy_env(vertica_agg_func))
+  vertica_scalar_func <- list2env(scalar_funs, dplyr:::copy_env(vertica_scalar_func))
+  vertica_window_func <- list2env(transform_funs, dplyr:::copy_env(vertica_window_func))
+
+  assign("src_translate_env.src_vertica", function(x) {
+    sql_variant(
+      scalar = vertica_scalar_func,
+      window = vertica_window_func,
+      aggregate = vertica_agg_func
+      )
+}, envir = globalenv())
+
+}

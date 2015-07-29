@@ -45,7 +45,7 @@ setClass("VerticaConnection", representation = representation(conn = "ANY", type
 #' @import assertthat
 #' @import dplyr
 #' @export
-src_vertica <- function(dsn = NULL, jdbcpath = NULL, dbname = NULL, host = NULL, port = 5433, user = NULL, password = "") {
+src_vertica <- function(dsn = NULL, jdbcpath = NULL, dbname = NULL, host = NULL, port = 5433, user = NULL, password = "", load_udx=TRUE) {
   if(is.null(jdbcpath) && is.null(dsn)){
     stop("Must provide either the ODBC DSN driver name or the CLASSPATH to your Vertica JDBC Driver, e.g., src_vertica(...,dsn=\"VerticaDSN\") or src_vertica(...,jdbcpath=\"/opt/vertica/java/lib/vertica_jdbc.jar\")")
   }
@@ -84,7 +84,13 @@ src_vertica <- function(dsn = NULL, jdbcpath = NULL, dbname = NULL, host = NULL,
     stop("Stop error: Could not establish a valid connection to a Vertica database.")
   }
 
-  src_sql("vertica", con = con, info = info)
+  vsrc <- src_sql("vertica", con = con, info = info)
+
+  if(load_udx) {
+    import_udxes(vsrc)
+  }
+  
+  vsrc
 }
 
 # Describes the connection
@@ -101,15 +107,6 @@ src_desc.src_vertica <- function(x) {
     paste0("Vertica ", "ODBC Connection", "\n-----+DSN: ",info["Data_Source_Name"], "\n-----+Host: ", info["Server_Name"], 
     "\n-----+DB Version: ", info["DBMS_Ver"], "\n-----+ODBC Version: ", info["Driver_ODBC_Ver"])
   }
-}
-
-# Powers translations of scalar and window functions
-#' @export
-src_translate_env.src_vertica <- function(x) {
-  sql_variant(scalar = vertica_scalar_func,
-  window = vertica_window_func,
-  aggregate = vertica_agg_func
-  )
 }
 
 #' @export
@@ -508,7 +505,7 @@ select <- function(arg,...) {
 
 #' @export
 sql_escape_ident.VerticaConnection <- function(con, x) {
-  sql_quote(x,' ')
+  sql_quote(x,'"')
 }
 
 # Analyze for performance
@@ -619,12 +616,8 @@ setMethod("checkDB", "VerticaConnection", function(con) {
   out
 })
 
-# Lifted from dplyr package -- only change is adding parens argument 
+# Lifted from dplyr package -- only change is adding parens argument and relaxing over arguments requirement
 over <- function(expr, partition = NULL, order = NULL, frame = NULL, parens = FALSE) {
-  args <- (!is.null(partition)) + (!is.null(order)) + (!is.null(frame))
-  if (args == 0) {
-    stop("Must supply at least one of partition, order, frame", call. = FALSE)
-  }
 
   if (!is.null(partition)) {
     partition <- build_sql("PARTITION BY ",
