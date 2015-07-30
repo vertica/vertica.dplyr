@@ -86,23 +86,67 @@ vertica_win_func <- function(f) {
   }
 }
 
+udf_helper <- function(params) {
+
+   paramStr <- ""
+
+   suppressWarnings( if(!is.list(params)) {
+       if(!is.character(params)) stop("UDF parameters have to be passed as a key-value named list")
+       if(substr(params,1,5) != "LIST(") stop("UDF parameters have to be passed as a key-value named list")
+    } )
+
+   suppressWarnings(  if(is.character(params) && nchar(params) > 6 ) {
+      paramStr <- substr(params,6,nchar(params)-1)
+      paramStr <- gsub('"','',paramStr)
+      paramStr <- strsplit(paramStr,", ")
+
+      paramStr <- lapply(paramStr[[1]],function(x) {
+                       temp <- strsplit(x," AS ")
+                       if(length(temp[[1]]) < 2) stop("UDF parameters must be named!")
+                       paste0(temp[[1]][[2]],"=",temp[[1]][[1]])
+                       })
+
+      paramStr <- paste0(paramStr,collapse=", ")
+})
+
+   suppressWarnings(if(is.list(params) && length(params) > 0) {
+     if(length(names(params)) != length(params)) stop("UDF parameters must be named!")
+     paramsList <- mapply(function(x,y) { paste0(x,"=",y) }, names(params),params)
+     paramStr <- paste0(paramsList,collapse=", ")
+   })
+   
+   paramStr
+}
+
 vertica_udf <- function(f,transform=FALSE) {
   force(f)
   if(!transform) {
     function(...,params=list()) {
-      udf <- build_sql("USING PARAMETERS ", dplyr:::sql_vector(params))
     
-      args <- list(...)
-      print(class(args[[length(args)]]))
-      args[[length(args)]] <- sql(paste(args[[length(args)]],udf))
+  args <- list(...)
+  params <- udf_helper(params)
 
-      build_sql(sql(f),args)
+  if(nchar(params) > 0) {
+    udf <- paste0("USING PARAMETERS ", params)
+    args[[length(args)]] <- sql(paste(args[[length(args)]],udf))
+  }
+
+   build_sql(sql(f),args)
     }
   }
 
   else {
 
-  function(..., partition=dplyr:::partition_group(),order=dplyr:::partition_group(), range=NULL) {
+  function(..., params=list(), partition=dplyr:::partition_group(),order=dplyr:::partition_group(), range=NULL) {
+  
+    args <- list(...)
+    params <- udf_helper(params)
+
+  if(nchar(params) > 0) {
+    udf <- paste0("USING PARAMETERS ", params)
+    args[[length(args)]] <- sql(paste(args[[length(args)]],udf))
+  }
+
     if(is.character(range)) {
       range[1] = tryCatch({val=eval(parse(text=range[1]))
                            assert_that(!is.na(val))
@@ -118,7 +162,8 @@ vertica_udf <- function(f,transform=FALSE) {
                }) 
     }
     if(!is.null(range)) range <- as.numeric(range)
-    over(build_sql(sql(f), list(...)), partition, order, frame = range)
+
+    over(build_sql(sql(f), args), partition, order, frame = range)
   }
 
   }
@@ -223,6 +268,6 @@ import_udxes <- function(src) {
       window = vertica_window_func,
       aggregate = vertica_agg_func
       )
-}, envir = globalenv())
+}, envir = parent.frame(n=2))
 
 }

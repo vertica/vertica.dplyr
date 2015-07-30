@@ -597,7 +597,8 @@ sql_escape_string.VerticaConnection <- dplyr:::sql_escape_string.DBIConnection
 #' @export
 sql_join.VerticaConnection <- dplyr:::sql_join.DBIConnection
 #' @export
-sql_subquery.VerticaConnection <- dplyr:::sql_subquery.DBIConnection    #' @export
+sql_subquery.VerticaConnection <- dplyr:::sql_subquery.DBIConnection  
+#' @export
 sql_semi_join.VerticaConnection <- dplyr:::sql_semi_join.DBIConnection
                           
 setGeneric("checkDB", function (con) {
