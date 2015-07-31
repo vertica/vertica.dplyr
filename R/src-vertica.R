@@ -493,7 +493,7 @@ db_explain.VerticaConnection <- function(con, sql, ...) {
 #' @export
 select <- function(.arg,...) {
 
-  if(!is(.arg,"tbl")) {
+  if(!is(.arg,"tbl") && !is(.arg,"data.frame")) {
       stopifnot(is(.arg,"src_vertica"))
       tbl <- make_tbl(c("vertica", "sql"),
       src = .arg,              # src object

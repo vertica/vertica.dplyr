@@ -236,21 +236,21 @@ import_udf <- function(src) {
   scalars <- list_udf(src,"scalar")
   transforms <- list_udf(src,"transform")
   
-  agg_funs <- mapply(vertica_udf,
-                  as.list(as.character(aggregates[["function.names"]])),
-                  MoreArgs=list(transform=FALSE))
+  agg_funs <- lapply(as.list(as.character(aggregates[["function.names"]])),
+                     vertica_udf,
+                     transform=FALSE)
 
   names(agg_funs) <- as.character(aggregates[["function.names"]])  
 
-  scalar_funs <- mapply(vertica_udf,
-                  as.list(as.character(scalars[["function.names"]])),
-                  MoreArgs=list(transform=FALSE))
+  scalar_funs <- lapply(as.list(as.character(scalars[["function.names"]])),
+                        vertica_udf,      
+                        transform=FALSE)
 
   names(scalar_funs) <- as.character(scalars[["function.names"]])  
 
-  transform_funs <- mapply(vertica_udf,
-                  as.list(as.character(transforms[["function.names"]])),
-                  MoreArgs=list(transform=TRUE))
+  transform_funs <- lapply(as.list(as.character(transforms[["function.names"]])),
+                           vertica_udf,
+                           transform=TRUE)
 
   names(transform_funs) <- as.character(transforms[["function.names"]])  
   
