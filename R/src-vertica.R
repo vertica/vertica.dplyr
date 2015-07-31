@@ -33,6 +33,7 @@ setClass("VerticaConnection", representation = representation(conn = "ANY", type
 #' @param port (Only required for JDBC) Port number of the Vertica server. The Vertica default is 5433.
 #' @param user (Only required for JDBC) Username of the owner of the database.
 #' @param password (Only required for JDBC) Password, if any, of the database.
+#' @param load_udf A boolean value. If TRUE (default), this will automatically register the UDFs into the session.
 #' @return A dplyr::src object, src_vertica, to be used with dplyr functions.
 #' @examples
 #' \dontrun{

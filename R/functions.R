@@ -112,7 +112,7 @@ udf_helper <- function(params) {
 
   suppressWarnings(if(is.list(params) && length(params) > 0) {
     if(length(names(params)) != length(params)) stop("UDF parameters must be named!")
-    paramsList <- mapply(function(x,y) { paste0(x,"=",y) }, names(params),params)
+    paramsList <- mapply(function(x,y) { paste0(x,"=",escape(y)) }, names(params),params)
     paramStr <- paste0(paramsList,collapse=", ")
   })
    
