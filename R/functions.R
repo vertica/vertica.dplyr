@@ -16,20 +16,20 @@
 #Suite 330, Boston, MA 02111-1307 USA
 #####################################################################
 
-## This file defines the scalar, window, and aggregate functions that are invokable in Vertica, as well as utility functions for R-UDxes
+## This file defines the scalar, window, and aggregate functions that are invokable in Vertica, as well as utility functions for UDFs
 
 #' This function shows to the user the names of the funtions, their type, as well as the return and input data types.
 #'
 #' @param src The src_vertica instance from which to query for UDxes.
+#' @param type The UDF type to list (one of "aggregate","scalar", or "transform").
 #' @return A data frame containing four columns: function name, function type, output data type(s), and input data type(s).
 #' @examples
 #' \dontrun{
 #' vertica <- src_vertica("VerticaDSN")
-#' UDxes <- list_udx(vertica)
+#' UDF <- list_udf(vertica)
 #' }
 #' @export
-list_udx <- function(src,type=NULL) {
-  
+list_udf <- function(src,type=NULL) {
   if(is.null(type)) where <- "1=1"
   else if(type == "transform") {
     where <- "procedure_type='Transform'" 
@@ -42,130 +42,125 @@ list_udx <- function(src,type=NULL) {
     where <- "1=1"
   }
 
-  list_udx_query <- paste0("SELECT * FROM (SELECT schema_name,function_name,DECODE(procedure_type,\'User Defined Function\',\'Scalar\',\'User Defined Transform\',\'Transform\',\'User Defined Aggregate \',\'Aggregate\',\'other\') AS procedure_type,function_return_type,function_argument_type FROM user_functions) as foo WHERE ", where)
+  list_udf_query <- paste0("SELECT * FROM (SELECT schema_name,function_name AS UDF_NAME,DECODE(procedure_type,\'User Defined Function\',\'Scalar\',\'User Defined Transform\',\'Transform\',\'User Defined Aggregate \',\'Aggregate\',\'other\') AS PROCEDURE_TYPE,function_return_type AS RETURN_TYPE,function_argument_type AS ARGUMENT_TYPES FROM user_functions) as foo WHERE ", where)
 
  if(src$con@type=="ODBC") {
-    res <- sqlQuery(src$con@conn,list_udx_query)
+    res <- sqlQuery(src$con@conn,list_udf_query)
   }
   else {
-    res <- dbGetQuery(src$con@conn,list_udx_query)
+    res <- dbGetQuery(src$con@conn,list_udf_query)
   }
 
-    function.names <- mapply(function(x,y) {
-      if(as.character(x) != "public") {
-        y <- paste0(as.character(x),".",as.character(y))
-      }
-      as.character(y)
-    },res[[1]],res[[2]])
+  function.names <- mapply(function(x,y) {
+    if(as.character(x) != "public") {
+      y <- paste0(as.character(x),".",as.character(y))
+    }
+    as.character(y)
+  },res[[1]],res[[2]])
 
-    out <- cbind(function.names,res[,c(3,4,5)])
-    names(out) <- c("UDF Name","Type","Return Type","Argument Type(s)")
-    out
+  if(length(function.names) == 0) function.names <- data.frame(function.names=integer(0))
+
+  out <- cbind(function.names,res[,c(3,4,5)])
+  out
+}
+
+validate_range <- function(range) {
+  if(is.character(range)) {
+    range[1] = tryCatch({val=eval(parse(text=range[1]))
+                 assert_that(!is.na(val))
+                 val
+               },
+                 error = function(e){
+                 range[1] = -Inf
+               })
+
+    range[2] = tryCatch({val=eval(parse(text=range[2]))
+                 assert_that(!is.na(val))
+                 val
+               },
+                 error = function(e){
+                 range[2] = Inf
+               }) 
+    }
+
+    if(!is.null(range)) range <- as.numeric(range)
+
+  range
+}
+
+udf_helper <- function(params) {
+  paramStr <- ""
+
+  suppressWarnings( if(!is.list(params)) {
+    if(!is.character(params)) stop("UDF parameters have to be passed as a key-value named list")
+    if(substr(params,1,5) != "LIST(") stop("UDF parameters have to be passed as a key-value named list")
+  } )
+
+  suppressWarnings(  if(is.character(params) && nchar(params) > 6 ) {
+    paramStr <- substr(params,6,nchar(params)-1)
+    paramStr <- gsub('"','',paramStr)
+    paramStr <- strsplit(paramStr,", ")
+
+    paramStr <- lapply(paramStr[[1]],function(x) {
+                  temp <- strsplit(x," AS ")
+                    if(length(temp[[1]]) < 2) stop("UDF parameters must be named!")
+                      paste0(temp[[1]][[2]],"=",temp[[1]][[1]])
+                })
+
+    paramStr <- paste0(paramStr,collapse=", ")
+})
+
+  suppressWarnings(if(is.list(params) && length(params) > 0) {
+    if(length(names(params)) != length(params)) stop("UDF parameters must be named!")
+    paramsList <- mapply(function(x,y) { paste0(x,"=",y) }, names(params),params)
+    paramStr <- paste0(paramsList,collapse=", ")
+  })
+   
+  paramStr
 }
 
 # Generic Vertica window function sql constructor with range and order by parameters.
 vertica_win_func <- function(f) {
   force(f)
   function(..., partition=dplyr:::partition_group(),order=dplyr:::partition_group(), range=NULL) {
-    if(is.character(range)) {
-      range[1] = tryCatch({val=eval(parse(text=range[1]))
-                           assert_that(!is.na(val))
-                           val},
-                 error = function(e){
-                 range[1] = -Inf
-               })
-      range[2] = tryCatch({val=eval(parse(text=range[2]))
-                           assert_that(!is.na(val))
-                           val},
-                 error = function(e){
-                 range[2] = Inf
-               }) 
-    }
-    if(!is.null(range)) range <- as.numeric(range)
+    range <- validate_range(range) 
     over(build_sql(sql(f), list(...)), partition, order, frame = range)
   }
 }
 
-udf_helper <- function(params) {
-
-   paramStr <- ""
-
-   suppressWarnings( if(!is.list(params)) {
-       if(!is.character(params)) stop("UDF parameters have to be passed as a key-value named list")
-       if(substr(params,1,5) != "LIST(") stop("UDF parameters have to be passed as a key-value named list")
-    } )
-
-   suppressWarnings(  if(is.character(params) && nchar(params) > 6 ) {
-      paramStr <- substr(params,6,nchar(params)-1)
-      paramStr <- gsub('"','',paramStr)
-      paramStr <- strsplit(paramStr,", ")
-
-      paramStr <- lapply(paramStr[[1]],function(x) {
-                       temp <- strsplit(x," AS ")
-                       if(length(temp[[1]]) < 2) stop("UDF parameters must be named!")
-                       paste0(temp[[1]][[2]],"=",temp[[1]][[1]])
-                       })
-
-      paramStr <- paste0(paramStr,collapse=", ")
-})
-
-   suppressWarnings(if(is.list(params) && length(params) > 0) {
-     if(length(names(params)) != length(params)) stop("UDF parameters must be named!")
-     paramsList <- mapply(function(x,y) { paste0(x,"=",y) }, names(params),params)
-     paramStr <- paste0(paramsList,collapse=", ")
-   })
-   
-   paramStr
-}
-
+# Generic Vertica UDF sql constructor for scalar and transform functions.
 vertica_udf <- function(f,transform=FALSE) {
   force(f)
   if(!transform) {
     function(...,params=list()) {
-    
-  args <- list(...)
-  params <- udf_helper(params)
-
-  if(nchar(params) > 0) {
-    udf <- paste0("USING PARAMETERS ", params)
-    args[[length(args)]] <- sql(paste(args[[length(args)]],udf))
-  }
-
-   build_sql(sql(f),args)
+      args <- list(...)
+      params <- udf_helper(params)
+      if(nchar(params) > 0) {
+        udf <- paste0("USING PARAMETERS ", params)
+        if(length(args) > 0) {
+          args[[length(args)]] <- sql(paste(args[[length(args)]],udf))
+        } else {
+          args[[1]] <- sql(udf)
+        }
+      }
+     build_sql(sql(f),args)
     }
   }
-
   else {
-
-  function(..., params=list(), partition=dplyr:::partition_group(),order=dplyr:::partition_group(), range=NULL) {
-  
-    args <- list(...)
-    params <- udf_helper(params)
-
-  if(nchar(params) > 0) {
-    udf <- paste0("USING PARAMETERS ", params)
-    args[[length(args)]] <- sql(paste(args[[length(args)]],udf))
-  }
-
-    if(is.character(range)) {
-      range[1] = tryCatch({val=eval(parse(text=range[1]))
-                           assert_that(!is.na(val))
-                           val},
-                 error = function(e){
-                 range[1] = -Inf
-               })
-      range[2] = tryCatch({val=eval(parse(text=range[2]))
-                           assert_that(!is.na(val))
-                           val},
-                 error = function(e){
-                 range[2] = Inf
-               }) 
+    function(..., params=list(), partition=dplyr:::partition_group(),order=dplyr:::partition_group(), range=NULL) {
+      args <- list(...)
+      params <- udf_helper(params)
+      if(nchar(params) > 0) {
+          udf <- paste0("USING PARAMETERS ", params)
+        if(length(args) > 0) {
+          args[[length(args)]] <- sql(paste(args[[length(args)]],udf))
+        } else {
+          args[[1]] <- sql(udf)
+        }
+      }
+      range <- validate_range(range)
+      over(build_sql(sql(f), args), partition, order, frame = range)
     }
-    if(!is.null(range)) range <- as.numeric(range)
-
-    over(build_sql(sql(f), args), partition, order, frame = range)
-  }
-
   }
 }
 
@@ -235,28 +230,29 @@ src_translate_env.src_vertica <- function(x) {
   )
 }
 
-import_udxes <- function(src) {
-  aggregates <- list_udx(src,"aggregate")
-  scalars <- list_udx(src,"scalar")
-  transforms <- list_udx(src,"transform")
+# Queries the database for UDFs, and appropriately "registers" them in vertica.dplyr
+import_udf <- function(src) {
+  aggregates <- list_udf(src,"aggregate")
+  scalars <- list_udf(src,"scalar")
+  transforms <- list_udf(src,"transform")
   
   agg_funs <- mapply(vertica_udf,
-                  as.list(as.character(aggregates[["UDF Name"]])),
-                  FALSE)
+                  as.list(as.character(aggregates[["function.names"]])),
+                  MoreArgs=list(transform=FALSE))
 
-  names(agg_funs) <- as.character(aggregates[["UDF Name"]])  
+  names(agg_funs) <- as.character(aggregates[["function.names"]])  
 
   scalar_funs <- mapply(vertica_udf,
-                  as.list(as.character(scalars[["UDF Name"]])),
-                  FALSE)
+                  as.list(as.character(scalars[["function.names"]])),
+                  MoreArgs=list(transform=FALSE))
 
-  names(scalar_funs) <- as.character(scalars[["UDF Name"]])  
+  names(scalar_funs) <- as.character(scalars[["function.names"]])  
 
   transform_funs <- mapply(vertica_udf,
-                  as.list(as.character(transforms[["UDF Name"]])),
-                  TRUE)
+                  as.list(as.character(transforms[["function.names"]])),
+                  MoreArgs=list(transform=TRUE))
 
-  names(transform_funs) <- as.character(transforms[["UDF Name"]])  
+  names(transform_funs) <- as.character(transforms[["function.names"]])  
   
   vertica_agg_func <- list2env(agg_funs, dplyr:::copy_env(vertica_agg_func))
   vertica_scalar_func <- list2env(scalar_funs, dplyr:::copy_env(vertica_scalar_func))
@@ -268,6 +264,6 @@ import_udxes <- function(src) {
       window = vertica_window_func,
       aggregate = vertica_agg_func
       )
-}, envir = parent.frame(n=2))
+  }, envir = parent.frame(n=2))
 
 }

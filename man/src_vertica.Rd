@@ -5,7 +5,7 @@
 \title{Establishes a connection to Vertica and returns a dplyr 'src' object, src_vertica, using either vRODBC or JDBC.}
 \usage{
 src_vertica(dsn = NULL, jdbcpath = NULL, dbname = NULL, host = NULL,
-  port = 5433, user = NULL, password = "")
+  port = 5433, user = NULL, password = "", load_udf = TRUE)
 }
 \arguments{
 \item{dsn}{The name of the ODBC DSN to use for connecting to Vertica. Must be a string. If NULL, JDBC-use is assumed.}

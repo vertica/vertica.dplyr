@@ -45,7 +45,7 @@ setClass("VerticaConnection", representation = representation(conn = "ANY", type
 #' @import assertthat
 #' @import dplyr
 #' @export
-src_vertica <- function(dsn = NULL, jdbcpath = NULL, dbname = NULL, host = NULL, port = 5433, user = NULL, password = "", load_udx=TRUE) {
+src_vertica <- function(dsn = NULL, jdbcpath = NULL, dbname = NULL, host = NULL, port = 5433, user = NULL, password = "", load_udf=TRUE) {
   if(is.null(jdbcpath) && is.null(dsn)){
     stop("Must provide either the ODBC DSN driver name or the CLASSPATH to your Vertica JDBC Driver, e.g., src_vertica(...,dsn=\"VerticaDSN\") or src_vertica(...,jdbcpath=\"/opt/vertica/java/lib/vertica_jdbc.jar\")")
   }
@@ -86,8 +86,8 @@ src_vertica <- function(dsn = NULL, jdbcpath = NULL, dbname = NULL, host = NULL,
 
   vsrc <- src_sql("vertica", con = con, info = info)
 
-  if(load_udx) {
-    import_udxes(vsrc)
+  if(load_udf) {
+    import_udf(vsrc)
   }
   
   vsrc
@@ -472,20 +472,31 @@ db_explain.VerticaConnection <- function(con, sql, ...) {
     if(substring(x,1,1) == "|") x = paste0("\n",x)
     if(x == "") x = "\n"
     x
-   })
+  })
 
   graphVizInd <- match("PLAN: BASE QUERY PLAN (GraphViz Format)",output)
   output[1:(graphVizInd-4)]
 }
 
-## Used to select UDxes without FROM clauses
+# Used to select UDFs without FROM clauses
+#' Like dplyr::select, but allows for the first argument to be a src_vertica object
+#' for SELECT statements without FROM clauses.
+#' @param .arg dplyr tbl OR src_vertica connection object 
+#' @param ... table columns (i.e., as used in mutate())
+#' @return a tbl_vertica object
+#' @examples
+#' \dontrun{
+#' vertica <- src_vertica("VerticaDSN")
+#' table <- select(vertica,foo=some_fun())
+#' table2 <- select(table,some_col_in_table)
+#' }
 #' @export
-select <- function(arg,...) {
+select <- function(.arg,...) {
 
-  if(!is(arg,"tbl")) {
-      stopifnot(is(arg,"src_vertica"))
+  if(!is(.arg,"tbl")) {
+      stopifnot(is(.arg,"src_vertica"))
       tbl <- make_tbl(c("vertica", "sql"),
-      src = arg,              # src object
+      src = .arg,              # src object
       from = NULL,            # table, join, or raw sql
       select = NULL,          # SELECT: list of symbols
       summarise = FALSE,      #   interpret select as aggreagte functions?
@@ -498,7 +509,7 @@ select <- function(arg,...) {
     mutate(tbl,...) 
 
   } else {
-    dplyr::select(arg,...)
+    dplyr::select(.arg,...)
   }
 
 }

@@ -281,20 +281,6 @@ hr {
 library(vertica.dplyr)
 </code></pre>
 
-<pre><code>## Loading required package: assertthat
-## Loading required package: dplyr
-## 
-## Attaching package: &#39;dplyr&#39;
-## 
-## The following objects are masked from &#39;package:stats&#39;:
-## 
-##     filter, lag
-## 
-## The following objects are masked from &#39;package:base&#39;:
-## 
-##     intersect, setdiff, setequal, union
-</code></pre>
-
 <p>Note that a few of the imported dplyr functions have names that overwrite their R-base equivalents.</p>
 
 <h2>Connect to HP Vertica</h2>
@@ -307,18 +293,10 @@ library(vertica.dplyr)
 vertica_odbc &lt;- src_vertica(&quot;VerticaDSN&quot;)
 </code></pre>
 
-<pre><code>## Attempting to load package `vRODBC` and its dependencies...
-## Successfully loaded.
-</code></pre>
-
 <h3>Via JDBC (requires <strong>RJDBC</strong>):</h3>
 
 <pre><code class="r"># Connect to HP Vertica using RJDBC
 vertica_jdbc &lt;- src_vertica(dsn = NULL, jdbcpath=&quot;/opt/vertica/java/lib/vertica_jdbc.jar&quot;,&quot;foobar&quot;,&quot;localhost&quot;,5433,&quot;dbadmin&quot;)
-</code></pre>
-
-<pre><code>## Attempting to load package `RJDBC` and its dependencies...
-## Successfully loaded.
 </code></pre>
 
 <p>In this example, you connect to an HP Vertica DB instance named &ldquo;foobar&rdquo; that is listening on port 5433, with db-owner username &ldquo;dbadmin&rdquo;, and no password. The ODBC version is much more brief, because all of the configuration details are settled inside of ODBC.ini on the system, and you only need to provide the DSN. Note that if <code>dsn</code> is NULL, it is assumed that JDBC is to be used.</p>
@@ -334,24 +312,24 @@ vertica_odbc
 ## -----+Host: 127.0.0.1
 ## -----+DB Version: 07.01.0002
 ## -----+ODBC Version: 03.80
-## tbls: AllstarFull, AwardsManagers, AwardsPlayers, AwardsShareManagers,
-##   AwardsSharePlayers, bank_original, compute_test_table, d1, d2, Fielding,
-##   FieldingOF, FieldingPost, HallOfFame, LahmanData, Managers,
-##   ManagersHalf, Master, Pitching, PitchingPost, ref_join, Salaries,
-##   Schools, SchoolsPlayers, SeriesPost, TeamsFranchises, tempName, test,
-##   tsempName
+## tbls: AllstarFull, asdf, AwardsManagers, AwardsPlayers,
+##   AwardsShareManagers, AwardsSharePlayers, bank_original,
+##   compute_test_table, d1, d2, Fielding, FieldingOF, FieldingPost,
+##   HallOfFame, LahmanData, Managers, ManagersHalf, Master, Pitching,
+##   PitchingPost, ref_join, Salaries, Schools, SchoolsPlayers, SeriesPost,
+##   TeamsFranchises, tempName, test, tsempName
 </code></pre>
 
 <pre><code class="r">vertica_jdbc
 </code></pre>
 
 <pre><code>## src:  Vertica JDBC Connection [dbadmin@localhost:5433/foobar]
-## tbls: AllstarFull, AwardsManagers, AwardsPlayers, AwardsShareManagers,
-##   AwardsSharePlayers, bank_original, compute_test_table, d1, d2, Fielding,
-##   FieldingOF, FieldingPost, HallOfFame, LahmanData, Managers,
-##   ManagersHalf, Master, Pitching, PitchingPost, ref_join, Salaries,
-##   Schools, SchoolsPlayers, SeriesPost, TeamsFranchises, tempName, test,
-##   tsempName
+## tbls: AllstarFull, asdf, AwardsManagers, AwardsPlayers,
+##   AwardsShareManagers, AwardsSharePlayers, bank_original,
+##   compute_test_table, d1, d2, Fielding, FieldingOF, FieldingPost,
+##   HallOfFame, LahmanData, Managers, ManagersHalf, Master, Pitching,
+##   PitchingPost, ref_join, Salaries, Schools, SchoolsPlayers, SeriesPost,
+##   TeamsFranchises, tempName, test, tsempName
 </code></pre>
 
 <p>as well as whether or not <code>dsn</code> is required as a parameter for <code>tbl2dframe</code>, <code>tbl2darray</code>, and <code>tbl2darrays</code>.</p>
@@ -388,11 +366,11 @@ class(vertica)
 <pre><code class="r">salaries$query
 </code></pre>
 
-<pre><code>## &lt;Query&gt; SELECT  yearID ,  teamID ,  lgID ,  playerID ,  salary 
-## FROM  Salaries 
+<pre><code>## &lt;Query&gt; SELECT &quot;yearID&quot;, &quot;teamID&quot;, &quot;lgID&quot;, &quot;playerID&quot;, &quot;salary&quot;
+## FROM &quot;Salaries&quot;
 ## An object of class &quot;VerticaConnection&quot;
 ## Slot &quot;conn&quot;:
-## vRODBC Connection 1
+## vRODBC Connection 10
 ## Details:
 ##   case=nochange
 ##   DSN=VerticaDSN
@@ -571,12 +549,12 @@ q2
 q2$query
 </code></pre>
 
-<pre><code>## &lt;Query&gt; SELECT  year  AS  year ,  month  AS  month ,  day  AS  day ,  origin  AS  origin ,  arr_delay  AS  arr_delay 
-## FROM  flights 
-## WHERE  year  = 2013.0 AND  month  &gt; 1.0 AND  month  &lt; 12.0
+<pre><code>## &lt;Query&gt; SELECT &quot;year&quot; AS &quot;year&quot;, &quot;month&quot; AS &quot;month&quot;, &quot;day&quot; AS &quot;day&quot;, &quot;origin&quot; AS &quot;origin&quot;, &quot;arr_delay&quot; AS &quot;arr_delay&quot;
+## FROM &quot;flights&quot;
+## WHERE &quot;year&quot; = 2013.0 AND &quot;month&quot; &gt; 1.0 AND &quot;month&quot; &lt; 12.0
 ## An object of class &quot;VerticaConnection&quot;
 ## Slot &quot;conn&quot;:
-## vRODBC Connection 1
+## vRODBC Connection 10
 ## Details:
 ##   case=nochange
 ##   DSN=VerticaDSN
@@ -668,15 +646,15 @@ q5
 <pre><code class="r">q5$query
 </code></pre>
 
-<pre><code>## &lt;Query&gt; SELECT  origin ,  count ,  delay 
-## FROM (SELECT  origin , count(*) AS  count , AVG( arr_delay ) AS  delay 
-## FROM  flights 
-## WHERE  year  = 2013.0 AND  month  &gt; 1.0 AND  month  &lt; 12.0 AND NOT( arr_delay IS NULL)
-## GROUP BY  origin ) AS  _W1 
-## ORDER BY  delay  DESC
+<pre><code>## &lt;Query&gt; SELECT &quot;origin&quot;, &quot;count&quot;, &quot;delay&quot;
+## FROM (SELECT &quot;origin&quot;, count(*) AS &quot;count&quot;, AVG(&quot;arr_delay&quot;) AS &quot;delay&quot;
+## FROM &quot;flights&quot;
+## WHERE &quot;year&quot; = 2013.0 AND &quot;month&quot; &gt; 1.0 AND &quot;month&quot; &lt; 12.0 AND NOT(&quot;arr_delay&quot;IS NULL)
+## GROUP BY &quot;origin&quot;) AS &quot;_W22&quot;
+## ORDER BY &quot;delay&quot; DESC
 ## An object of class &quot;VerticaConnection&quot;
 ## Slot &quot;conn&quot;:
-## vRODBC Connection 1
+## vRODBC Connection 10
 ## Details:
 ##   case=nochange
 ##   DSN=VerticaDSN
@@ -813,6 +791,16 @@ grid(nx=5)
 
 <p><strong>Note: Pay particular attention to types. By default, numbers passed into R functions are of type numeric, and these do not work with HP Vertica functions that require integer values. To pass integer values, you must use &ldquo;L&rdquo; after the number in R, for example, <code>func(2L,3L)</code>.</strong></p>
 
+<h2>User-Defined Functions</h2>
+
+<p>vertica.dplyr also allows user-defined functions (UDFs) in HP Vertica to be run. <code>list_udf()</code> will allow you to take a <code>src_vertica</code> connection object and will return to you a list of currently registered UDFs. This will return a data frame of UDFs, as well as their types. To invoke a UDF, simply follow the same conventions as the other functions mentioned above (using mutate or select). UDFs take in optional <em>parameters</em>, as specified in Vertica with a <code>USING PARAMETERS</code> clause following the normal function arguments. To supply these parameters, supply a <code>list()</code> in R to the <code>params</code> argument in the function, corresponding to a key-value mapping for the parameters, for example, as below:</p>
+
+<pre><code class="udf invocation eval=FALSE">table &lt;- tbl(vertica,&quot;some_table&quot;)
+result &lt;- mutate(table,fun=some_udf(col1,col2,params=list(param1=&#39;x&#39;,foo=3,bar=3.4)))
+</code></pre>
+
+<p>The above example will result in a <code>SELECT</code> on the columns of <code>table</code> and <code>SOME_UDF(col1,col2 USING PARAMETERS param1=&#39;x&#39;, foo=3, bar=3.4) AS fun</code>.</p>
+
 <h2>Other functionality</h2>
 
 <p>The previous examples demonstrate how to access tables and manipulate them with some of the most common vertica.dplyr functions. The examples include a general template for how to invoke HP Vertica functions.</p>
@@ -820,6 +808,25 @@ grid(nx=5)
 <p>The following examples go over some of the additional things that can be done using vertica.dplyr.</p>
 
 <p>Many of the functions described below take a <code>VerticaConnection</code> object, meaning something that may be accessed by retrieving the <code>con</code> member of your <code>src_vertica</code> object. In the previous examples, this would be <code>vertica$con</code>.</p>
+
+<h2>Select statements without FROM</h2>
+
+<p>For several HP Vertica functions or external procedures, the invocation is one without a <code>FROM</code> clause. To invoke them with vertica.dplyr, supply a <code>select</code> statement with the first argument a <code>src_vertica</code> object, as opposed to a <code>tbl_vertica</code>; for example:</p>
+
+<pre><code class="r">select(vertica,user=user())
+</code></pre>
+
+<pre><code>## Source: Vertica ODBC Connection
+## -----+DSN: VerticaDSN
+## -----+Host: 127.0.0.1
+## -----+DB Version: 07.01.0002
+## -----+ODBC Version: 03.80
+## From: &lt;derived table&gt; [?? x 1]
+## 
+##       user
+## 1  dbadmin
+## ..     ...
+</code></pre>
 
 <h3>Creating a table in HP Vertica</h3>
 
@@ -860,16 +867,16 @@ for files with headings (<em>example: 1L</em>)</li>
 <pre><code class="r">db_list_tables(vertica$con)
 </code></pre>
 
-<pre><code>##  [1] &quot;AllstarFull&quot;         &quot;AwardsManagers&quot;      &quot;AwardsPlayers&quot;      
-##  [4] &quot;AwardsShareManagers&quot; &quot;AwardsSharePlayers&quot;  &quot;bank_original&quot;      
-##  [7] &quot;compute_test_table&quot;  &quot;d1&quot;                  &quot;d2&quot;                 
-## [10] &quot;Fielding&quot;            &quot;FieldingOF&quot;          &quot;FieldingPost&quot;       
-## [13] &quot;flights&quot;             &quot;HallOfFame&quot;          &quot;LahmanData&quot;         
-## [16] &quot;Managers&quot;            &quot;ManagersHalf&quot;        &quot;Master&quot;             
-## [19] &quot;Pitching&quot;            &quot;PitchingPost&quot;        &quot;ref_join&quot;           
-## [22] &quot;Salaries&quot;            &quot;Schools&quot;             &quot;SchoolsPlayers&quot;     
-## [25] &quot;SeriesPost&quot;          &quot;TeamsFranchises&quot;     &quot;tempName&quot;           
-## [28] &quot;test&quot;                &quot;tsempName&quot;
+<pre><code>##  [1] &quot;AllstarFull&quot;         &quot;asdf&quot;                &quot;AwardsManagers&quot;     
+##  [4] &quot;AwardsPlayers&quot;       &quot;AwardsShareManagers&quot; &quot;AwardsSharePlayers&quot; 
+##  [7] &quot;bank_original&quot;       &quot;compute_test_table&quot;  &quot;d1&quot;                 
+## [10] &quot;d2&quot;                  &quot;Fielding&quot;            &quot;FieldingOF&quot;         
+## [13] &quot;FieldingPost&quot;        &quot;flights&quot;             &quot;HallOfFame&quot;         
+## [16] &quot;LahmanData&quot;          &quot;Managers&quot;            &quot;ManagersHalf&quot;       
+## [19] &quot;Master&quot;              &quot;Pitching&quot;            &quot;PitchingPost&quot;       
+## [22] &quot;ref_join&quot;            &quot;Salaries&quot;            &quot;Schools&quot;            
+## [25] &quot;SchoolsPlayers&quot;      &quot;SeriesPost&quot;          &quot;TeamsFranchises&quot;    
+## [28] &quot;tempName&quot;            &quot;test&quot;                &quot;tsempName&quot;
 </code></pre>
 
 <pre><code class="r">db_has_table(vertica$con,&quot;foobar&quot;)
@@ -895,19 +902,19 @@ for files with headings (<em>example: 1L</em>)</li>
 </code></pre>
 
 <pre><code>## &lt;SQL&gt;
-## SELECT  origin ,  count ,  delay 
-## FROM (SELECT  origin , count(*) AS  count , AVG( arr_delay ) AS  delay 
-## FROM  flights 
-## WHERE  year  = 2013.0 AND  month  &gt; 1.0 AND  month  &lt; 12.0 AND NOT( arr_delay IS NULL)
-## GROUP BY  origin ) AS  _W1 
-## ORDER BY  delay  DESC
+## SELECT &quot;origin&quot;, &quot;count&quot;, &quot;delay&quot;
+## FROM (SELECT &quot;origin&quot;, count(*) AS &quot;count&quot;, AVG(&quot;arr_delay&quot;) AS &quot;delay&quot;
+## FROM &quot;flights&quot;
+## WHERE &quot;year&quot; = 2013.0 AND &quot;month&quot; &gt; 1.0 AND &quot;month&quot; &lt; 12.0 AND NOT(&quot;arr_delay&quot;IS NULL)
+## GROUP BY &quot;origin&quot;) AS &quot;_W22&quot;
+## ORDER BY &quot;delay&quot; DESC
 ## 
 ## 
 ## &lt;PLAN&gt;
 ## ------------------------------ QUERY PLAN DESCRIPTION: ------------------------------
-## EXPLAIN SELECT origin , count , delay FROM (SELECT origin , count(*) AS count , AVG( arr_delay ) AS delay FROM flights WHERE year = 2013.0 AND month &gt; 1.0 AND month &lt; 12.0 AND NOT( arr_delay IS NULL) GROUP BY origin ) AS _W1 ORDER BY delay DESC
+## EXPLAIN SELECT &quot;origin&quot;, &quot;count&quot;, &quot;delay&quot; FROM (SELECT &quot;origin&quot;, count(*) AS &quot;count&quot;, AVG(&quot;arr_delay&quot;) AS &quot;delay&quot; FROM &quot;flights&quot; WHERE &quot;year&quot; = 2013.0 AND &quot;month&quot; &gt; 1.0 AND &quot;month&quot; &lt; 12.0 AND NOT(&quot;arr_delay&quot;IS NULL) GROUP BY &quot;origin&quot;) AS &quot;_W22&quot; ORDER BY &quot;delay&quot; DESC
 ## Access Path:+-SORT [Cost: 220K, Rows: 3] (PATH ID: 1)
-## |  Order: _W1.delay DESC
+## |  Order: _W22.delay DESC
 ## | +---&gt; GROUPBY HASH (LOCAL RESEGMENT GROUPS) [Cost: 220K, Rows: 3] (PATH ID: 3)
 ## | |      Aggregates: max(flights.origin), count(*), sum_float(flights.arr_delay), count(flights.arr_delay)
 ## | |      Group By: collation(flights.origin, &#39;en_US&#39;)
