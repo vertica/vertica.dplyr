@@ -549,7 +549,7 @@ get_data_type <- function(val, ...) {
 #' @export
 sql_set_op.VerticaConnection <- dplyr:::sql_set_op.DBIConnection
 
-# Override allows SELECT without FROM
+# Override allows SELECT without FROM, as well as support for schema tables
 #' @export
 sql_select.VerticaConnection <- function(con, select, from, where = NULL,
                                      group_by = NULL, having = NULL,
@@ -565,7 +565,19 @@ sql_select.VerticaConnection <- function(con, select, from, where = NULL,
 
   if (length(from) > 0L) { 
     assert_that(is.character(from))
+
     out$from <- build_sql("FROM ", from, con = con)
+    
+    if(grepl("\\.",from)) {
+        schemaTables <- getSchemas(con)
+        schemaTables <- paste0(schemaTables[,1],".",schemaTables[,2])
+
+        if(from %in% schemaTables) {
+          splits <- strsplit(from,"\\.")
+          out$from <- build_sql("FROM ",sql(paste0(splits[[1]][[1]],".")),
+                                ident(splits[[1]][[2]]))
+        }
+    } 
   }
 
   if (length(where) > 0L) {
@@ -579,7 +591,8 @@ sql_select.VerticaConnection <- function(con, select, from, where = NULL,
     out$group_by <- build_sql("GROUP BY ",
       escape(group_by, collapse = ", ", con = con))
   }
-if (!is.null(having)) {
+
+  if (!is.null(having)) {
     assert_that(is.character(having), length(having) == 1L)
     out$having <- build_sql("HAVING ",
       escape(having, collapse = ", ", con = con))
@@ -658,6 +671,12 @@ send_query.JDBCConnection <- function(conn, query, useGetQuery=FALSE) {
 send_query.vRODBC <- function(conn, query, ...) {
   sqlQuery(conn,query)
 }
+
+getSchemas <- function(con) {
+  schemasQuery <- "SELECT table_schema,table_name from tables"
+  send_query(con@conn,schemasQuery) 
+}
+
 
 .attemptLoad <- function(depName, ...) {
   if(depName %in% (.packages())) return()
