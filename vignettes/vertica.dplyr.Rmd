@@ -344,6 +344,16 @@ For a list of functions that are currently tested to work in vertica.dplyr and t
 
 **Note: Pay particular attention to types. By default, numbers passed into R functions are of type numeric, and these do not work with HP Vertica functions that require integer values. To pass integer values, you must use "L" after the number in R, for example, `func(2L,3L)`.**
 
+## User-Defined Functions
+vertica.dplyr also allows user-defined functions (UDFs) in HP Vertica to be run. `list_udf()` will allow you to take a `src_vertica` connection object and will return to you a list of currently registered UDFs. This will return a data frame of UDFs, as well as their types. To invoke a UDF, simply follow the same conventions as the other functions mentioned above (using mutate or select). UDFs take in optional *parameters*, as specified in Vertica with a `USING PARAMETERS` clause following the normal function arguments. To supply these parameters, supply a `list()` in R to the `params` argument in the function, corresponding to a key-value mapping for the parameters, for example, as below:
+
+```{udf invocation eval=FALSE}
+table <- tbl(vertica,"some_table")
+result <- mutate(table,fun=some_udf(col1,col2,params=list(param1='x',foo=3,bar=3.4)))
+```
+
+The above example will result in a `SELECT` on the columns of `table` and `SOME_UDF(col1,col2 USING PARAMETERS param1='x', foo=3, bar=3.4) AS fun`.
+
 ## Other functionality
 
 The previous examples demonstrate how to access tables and manipulate them with some of the most common vertica.dplyr functions. The examples include a general template for how to invoke HP Vertica functions.
@@ -351,6 +361,14 @@ The previous examples demonstrate how to access tables and manipulate them with 
 The following examples go over some of the additional things that can be done using vertica.dplyr.
 
 Many of the functions described below take a `VerticaConnection` object, meaning something that may be accessed by retrieving the `con` member of your `src_vertica` object. In the previous examples, this would be `vertica$con`.
+
+## Select statements without FROM
+
+For several HP Vertica functions or external procedures, the invocation is one without a `FROM` clause. To invoke them with vertica.dplyr, supply a `select` statement with the first argument a `src_vertica` object, as opposed to a `tbl_vertica`; for example:
+
+```{r select without from}
+select(vertica,user=user())
+```
 
 ### Creating a table in HP Vertica
 
