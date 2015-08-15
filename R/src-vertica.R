@@ -506,13 +506,38 @@ select <- function(.arg,...) {
       group_by = NULL,        # GROUP_BY: list of names
       order_by = NULL         # ORDER_BY: list of calls
     )
-    
-    mutate(tbl,...) 
+  
+    tbl$query <- query(tbl$src$con, sql(" "), NULL)    
+
+    mutate_(tbl,.dots = lazyeval::lazy_dots(...), .drop=TRUE)
 
   } else {
-    dplyr::select(.arg,...)
+    tryCatch(dplyr::select(.arg,...),error=function(e) {
+      mutate_(.arg,.dots = lazyeval::lazy_dots(...), .drop=TRUE) 
+    })
   }
 
+}
+
+#' @export
+mutate_.tbl_vertica <- function(.data, ..., .dots, .drop = FALSE) {
+  dots <- lazyeval::all_dots(.dots, ..., all_named = !.drop)
+  input <- partial_eval(dots, .data)
+
+  .data$mutate <- TRUE
+
+  if(.drop) .data$select <- NULL
+
+  new <- update(.data, select = c(.data$select,input))
+  # If we're creating a variable that uses a window function, it's
+  # safest to turn that into a subquery so that filter etc can use
+  # the new variable name
+
+  if (dplyr:::uses_window_fun(input, .data) && !.drop) {
+    collapse(new)
+  } else {
+    new
+  }
 }
 
 #' @export
@@ -604,7 +629,7 @@ sql_select.VerticaConnection <- function(con, select, from, where = NULL,
       escape(order_by, collapse = ", ", con = con))
   }
 
-  if (!is.null(limit)) {
+  if (!is.null(limit) && !is.na(limit)) {
     assert_that(is.integer(limit), length(limit) == 1L)
     out$limit <- build_sql("LIMIT ", limit, con = con)
   }
