@@ -5,12 +5,16 @@
 \title{Like dplyr::select, but allows for the first argument to be a src_vertica object
 for SELECT statements without FROM clauses.}
 \usage{
-select(.arg, ...)
+select(.arg, ..., evalNames = FALSE, collapse = TRUE)
 }
 \arguments{
 \item{.arg}{dplyr tbl OR src_vertica connection object}
 
 \item{...}{table columns (i.e., as used in mutate())}
+
+\item{evalNames}{pre-evaluate the statement to get column names of result (useful for functions that return more than one column)}
+
+\item{collapse}{collapse query into subquery (DEFAULT is TRUE); FALSE is needed for certain procedures quiring that the procedure name cannot be a part of a subquery}
 }
 \value{
 a tbl_vertica object

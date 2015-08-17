@@ -451,8 +451,15 @@ db_drop_view.VerticaConnection <- function(con, view) {
 }
 
 #' @export
-db_query_fields.VerticaConnection <- function(con, sql, ...){
-  fields <- paste0("SELECT * FROM ",sql," WHERE 0=1")
+db_query_fields.VerticaConnection <- function(con, table, ...){
+  fields <- paste0("SELECT * FROM ",table," WHERE 0=1")
+  qry <- send_query(con@conn, fields, useGetQuery=TRUE)
+  names(qry)
+}
+
+#' @export
+db_get_cols <- function(con, sql, ...){
+  fields <- paste0("SELECT * FROM (",sql,") AS foo WHERE 0=1")
   qry <- send_query(con@conn, fields, useGetQuery=TRUE)
   names(qry)
 }
@@ -484,6 +491,8 @@ db_explain.VerticaConnection <- function(con, sql, ...) {
 #' for SELECT statements without FROM clauses.
 #' @param .arg dplyr tbl OR src_vertica connection object 
 #' @param ... table columns (i.e., as used in mutate())
+#' @param evalNames pre-evaluate the statement to get column names of result (useful for functions that return more than one column)
+#' @param collapse collapse query into subquery (DEFAULT is TRUE); FALSE is needed for certain procedures quiring that the procedure name cannot be a part of a subquery
 #' @return a tbl_vertica object
 #' @examples
 #' \dontrun{
@@ -492,7 +501,7 @@ db_explain.VerticaConnection <- function(con, sql, ...) {
 #' table2 <- select(table,some_col_in_table)
 #' }
 #' @export
-select <- function(.arg,...) {
+select <- function(.arg,...,evalNames=FALSE,collapse=TRUE) {
 
   if(!is(.arg,"tbl") && !is(.arg,"data.frame")) {
       stopifnot(is(.arg,"src_vertica"))
@@ -509,31 +518,45 @@ select <- function(.arg,...) {
   
     tbl$query <- query(tbl$src$con, sql(" "), NULL)    
 
-    mutate_(tbl,.dots = lazyeval::lazy_dots(...), .drop=TRUE)
+    mutate_(tbl,.dots = lazyeval::lazy_dots(...), .evalNames=evalNames,.collapse=collapse)
 
   } else {
     tryCatch(dplyr::select(.arg,...),error=function(e) {
-      mutate_(.arg,.dots = lazyeval::lazy_dots(...), .drop=TRUE) 
+      mutate_(.arg,.dots = lazyeval::lazy_dots(...), .evalNames=evalNames,.collapse=collapse) 
     })
   }
 
 }
 
+#' Like dplyr::mutate, but allows for pre-evaluation to get column names (useful for multi-column returning functions)
+#' @param .data dplyr tbl 
+#' @param ... table columns (i.e., as used in dplyr::mutate())
+#' @param evalNames pre-evaluate the statement to get column names of result (useful for functions that return more than one column)
+#' @param collapse collapse query into subquery (DEFAULT is TRUE); FALSE is needed for certain procedures quiring that the procedure name cannot be a part of a subquery
+#' @return a tbl_vertica object
 #' @export
-mutate_.tbl_vertica <- function(.data, ..., .dots, .drop = FALSE) {
-  dots <- lazyeval::all_dots(.dots, ..., all_named = !.drop)
+mutate <- function(.data,...,evalNames=FALSE,collapse=TRUE) {
+  mutate_(.data, .dots = lazyeval::lazy_dots(...),.evalNames=evalNames,.collapse=collapse)
+}
+
+#' @export
+mutate_.tbl_vertica <- function(.data, ..., .dots, .evalNames = FALSE,.collapse=TRUE) {
+  dots <- lazyeval::all_dots(.dots, ..., all_named = !.evalNames)
   input <- partial_eval(dots, .data)
 
   .data$mutate <- TRUE
 
-  if(.drop) .data$select <- NULL
+  if(.evalNames) .data$select <- NULL
 
   new <- update(.data, select = c(.data$select,input))
-  # If we're creating a variable that uses a window function, it's
-  # safest to turn that into a subquery so that filter etc can use
-  # the new variable name
-
-  if (dplyr:::uses_window_fun(input, .data) && !.drop) {
+ 
+  if(.evalNames) {
+    new_cols <- db_get_cols(new$src$con,new$query$sql)
+    new_cols <- sapply(new_cols,as.name)
+    new$select <- new_cols
+  }
+  
+  if(.collapse) {
     collapse(new)
   } else {
     new
@@ -592,8 +615,9 @@ sql_select.VerticaConnection <- function(con, select, from, where = NULL,
     assert_that(is.character(from))
 
     out$from <- build_sql("FROM ", from, con = con)
-    
-    if(grepl("\\.",from)) {
+
+    # Currently this fails for JDBC connections
+    if(grepl("\\.",from) && is(con@conn,"vRODBC")) {
         schemaTables <- getSchemas(con)
         schemaTables <- paste0(schemaTables[,1],".",schemaTables[,2])
 
