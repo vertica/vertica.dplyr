@@ -536,7 +536,11 @@ select <- function(.arg,...,evalNames=FALSE,collapse=TRUE) {
 #' @return a tbl_vertica object
 #' @export
 mutate <- function(.data,...,evalNames=FALSE,collapse=TRUE) {
-  mutate_(.data, .dots = lazyeval::lazy_dots(...),.evalNames=evalNames,.collapse=collapse)
+  if(is(.data,"tbl_vertica")) {
+    mutate_(.data, .dots = lazyeval::lazy_dots(...),.evalNames=evalNames,.collapse=collapse)
+  } else {
+    dplyr::mutate(.data, ...)
+  }
 }
 
 #' @export
