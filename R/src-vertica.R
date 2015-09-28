@@ -113,7 +113,7 @@ src_desc.src_vertica <- function(x) {
 #' @export
 tbl.src_vertica <- function(src, from, ...) {
   tbl_sql("vertica", src = src, from = from, ...)
- }
+}
 
 #' @export
 query.VerticaConnection <- function(con, sql, .vars) {
@@ -208,21 +208,23 @@ Vertica.Query <- R6::R6Class("Vertica.Query",
 #' @export
 db_load_from_file <- function(dest, table.name, file.name, sep = " ", skip = 1L, append = FALSE){
   assert_that(is.character(table.name))
-  assert_that(is.character(file.name) && file.exists(file.name))
+  assert_that(is.character(file.name), file.exists(file.name))
 
   assert_that(is.character(sep))
   assert_that(class(dest)[1] == "src_vertica")
 
-  if(!db_has_table(dest$con,table.name)) stop("The specified table does not exist in Vertica.")
+  if(!db_has_table(dest$con, table.name)) stop("The specified table does not exist in Vertica.")
 
   skip <- ifelse(skip >=0,as.integer(skip),0L)
 
+  itable <- ident_schema_table(table.name)
+
   if(!append) {
-    delete_sql <- build_sql("DELETE FROM ", ident(table.name)) 
-    send_query(dest$con@conn,delete_sql)
+    delete_sql <- build_sql("DELETE FROM ", itable)
+    send_query(dest$con@conn, delete_sql)
   }
 
-  copy_sql <- build_sql("COPY ", ident(table.name), " FROM LOCAL ", file.name,
+  copy_sql <- build_sql("COPY ", itable, " FROM LOCAL ", file.name,
          " WITH DELIMITER AS ", sep, " NULL AS 'NA'", " SKIP ", skip, " ABORT ON ERROR", con = dest$con)
 
   tryCatch({result = send_query(dest$con@conn, copy_sql)
@@ -239,31 +241,32 @@ db_load_from_file <- function(dest, table.name, file.name, sep = " ", skip = 1L,
              stop(e)}
           )   
              
-  tbl(dest,table.name)
+  tbl(dest, table.name)
 } 
 
 #' @export
 copy_to.src_vertica <- function(dest, df, name = deparse(substitute(df)),
-                           temporary=FALSE,fast.load=TRUE,...) {
+                           temporary=FALSE, fast.load=TRUE, ...) {
   assert_that(is.data.frame(df), is.string(name))
 
   if (db_has_table(dest$con, name)) {
     warning(name, " already exists.")
-    ans <- readline(prompt = paste0("Replace existing table named `",name,"`?(y/n) "))
+    ans <- readline(prompt = paste0("Replace existing table named `", name, "`?(y/n) "))
     if(substring(ans,1,1) != "y" && substring(ans,1,1) == "Y") return()
     else db_drop_table(dest$con, name)
   }
 
-  types <-  db_data_type(dest$con, df)
+  types <- db_data_type(dest$con, df)
   names(types) <- names(df)
 
   if(temporary) warning("Copying to a temporary table is not supported. Writing to a permanent table.")
-  db_create_table(dest$con, name, types,temporary=FALSE)
+
+  db_create_table(dest$con, name, types, temporary=FALSE)
 
   if(fast.load) {
-    tmpfilename = paste0("/tmp/","dplyr_",name,".csv")
-    write.table(df,file=tmpfilename,sep=",",row.names=FALSE,quote=FALSE)    
-    db_load_from_file(dest,name,tmpfilename,sep=",",skip=1L)
+    tmpfilename = paste0("/tmp/", "dplyr_", name, ".csv")
+    write.table(df, file=tmpfilename, sep=",", row.names=FALSE, quote=FALSE)
+    db_load_from_file(dest, name, tmpfilename, sep=",", skip=1L)
     file.remove(tmpfilename)
   }
   else {
@@ -284,24 +287,25 @@ db_create_table.src_vertica <- function(src, table, types, temporary=FALSE, ...)
 #' @export
 db_create_table.VerticaConnection <- function(con, table, types, temporary=FALSE, ...) {
   assert_that(is.string(table), is.character(types))
-  if(db_has_table(con,table)) stop("Table name already exists")
+  if(db_has_table(con, table)) stop("Table name already exists")
 
   field_names <- escape(ident(names(types)), collapse = NULL, con = con)
   fields <- dplyr:::sql_vector(paste0(field_names, " ", types), parens = TRUE,
-  collapse = ", ", con = con)
+                               collapse = ", ", con = con)
 
-  sql <- build_sql("CREATE ", if(temporary) sql("TEMPORARY "), "TABLE ", ident(table), " ", fields, con = con)
+  sql <- build_sql("CREATE ", if(temporary) sql("TEMPORARY "), "TABLE ", ident_schema_table(table), " ", fields, con = con)
 
-  invisible(send_query(con@conn, sql))
+  #invisible(send_query(con@conn, sql))
+  send_query(con@conn, sql)
 
-  if(!db_has_table(con,table)) stop("Could not create table; are the data types specified in Vertica-compatible format?")
+  if(!db_has_table(con, table)) stop("Could not create table; are the data types specified in Vertica-compatible format?")
 }
 
 # Currently slow for bulk insertions
 db_insert_into.VerticaConnection <- function(con, table, values, ...) {
   cols <- lapply(values, escape, collapse = NULL, parens = FALSE, con = con)
   col_mat <- matrix(unlist(cols, use.names = FALSE), nrow = nrow(values))
-  coltypes <- unname(db_data_type(con,values))
+  coltypes <- unname(db_data_type(con, values))
 
   col_mat <- apply(col_mat,1, function(x){suppressWarnings(apply(cbind(x,coltypes),1,function(y){
     if(y[1] == "NULL") y[1] = paste0("CAST(",y[1]," AS ",y[2],")")
@@ -325,7 +329,7 @@ db_insert_into.VerticaConnection <- function(con, table, values, ...) {
     formatted_rows <- paste0("SELECT ",rows,"\nUNION ALL")
     formatted_rows[length(formatted_rows)] <- last_row;
 
-    sql <- build_sql(paste0("INSERT INTO ",ident(table),"\n",sql(paste(formatted_rows,collapse="\n"))))
+    sql <- build_sql(paste0("INSERT INTO ", ident_schema_table(table), "\n", sql(paste(formatted_rows, collapse="\n"))))
     sql <- gsub("''","'",sql)
     sql <- substr(sql,2,nchar(sql)-1)
     send_query(con@conn, sql)
@@ -353,7 +357,8 @@ db_insert_into.VerticaConnection <- function(con, table, values, ...) {
 #' }
 #' @export
 db_save_view <- function(table, name, temporary = FALSE) {
-  v_sql <- build_sql("CREATE ", if (temporary) sql("LOCAL TEMPORARY "),"VIEW ", ident(name), " AS ", table$query$sql, con = table$src$con)
+  v_sql <- build_sql("CREATE ", if (temporary) sql("LOCAL TEMPORARY "),"VIEW ", ident_schema_table(name),
+    " AS ", table$query$sql, con = table$src$con)
   send_query(table$src$con@conn, v_sql)
   message(paste0("Created ", ifelse(temporary,"temporary ",""), "view ","`",name,"`."))
   update(tbl(table$src, name), group_by = groups(table))
@@ -362,7 +367,7 @@ db_save_view <- function(table, name, temporary = FALSE) {
 #' @export
 db_save_query.VerticaConnection <- function(con, sql, name, temporary = FALSE,...){
   if(temporary) warning("Creating temporary tables is not supported. Saving as a permanent table.")
-  t_sql <- build_sql("CREATE TABLE ", ident(name), " AS ", sql, con = con)
+  t_sql <- build_sql("CREATE TABLE ", ident_schema_table(name), " AS ", sql, con = con)
   send_query(con@conn, t_sql)
   name
 }
@@ -382,14 +387,12 @@ db_list_tables.VerticaConnection <- function(con) {
     res <- dbGetQuery(con@conn,tbl_query)
   }
 
-    table.names <- mapply(function(x,y) {
-      if(as.character(x) != "public") {
-        y <- paste0(as.character(x),".",as.character(y))
-      }
-      as.character(y)
-    },res[[1]],res[[2]])
-
-    table.names
+  mapply(function(x,y) {
+    if(as.character(x) != getOption("dplyr.vertica_default_schema")) {
+      y <- paste0('"', as.character(x), '"."', as.character(y), '"')
+    }
+    as.character(y)
+  }, res[[1]], res[[2]])
 }
 
 #' @export
@@ -398,14 +401,24 @@ db_list_tables.src_vertica <- function(src) {
 }
 
 #' @export
-db_has_table.src_vertica <- function(src,table) {
-  db_has_table(src$con,table)
+db_has_table.src_vertica <- function(src, table) {
+  db_has_table(src$con, table)
 }
 
 #' @export
 db_has_table.VerticaConnection <- function(con, table) {
-  res <- db_list_tables(con)
-  table %in% res
+  assert_that(is.string(table))
+
+  st <- get_schema_table(table)
+  tbl_query <- paste0("SELECT COUNT(*) N FROM all_tables WHERE lower(table_name)=\'", tolower(st$table),
+                      "\' AND lower(schema_name)=\'", tolower(st$schema),"\'")
+  if(con@type=="ODBC") {
+    res <- sqlQuery(con@conn, tbl_query)
+  }
+  else {
+    res <- dbGetQuery(con@conn, tbl_query)
+  }
+  res$N > 0
 }
 
 #' @export
@@ -417,9 +430,9 @@ db_drop_table.src_vertica <- function(src, table, force = FALSE, ...) {
 db_drop_table.VerticaConnection <- function(con, table, force = FALSE, ...) {
   assert_that(is.string(table))
 
-  if(!db_has_table(con,table)) stop("Table does not exist in database.")
+  if(!db_has_table(con, table)) stop("Table does not exist in database.")
 
-  sql <- build_sql("DROP TABLE ", if (force) sql("IF EXISTS "), ident(table),
+  sql <- build_sql("DROP TABLE ", if (force) sql("IF EXISTS "), ident_schema_table(table),
     con = con)
   send_query(con@conn, sql)
 }
@@ -443,31 +456,29 @@ db_drop_view <- function(con, view) {
 db_drop_view.VerticaConnection <- function(con, view) {
   assert_that(is.string(view))
 
-  if(!db_has_table(con,view)) stop("View does not exist in database.")
+  if(!db_has_table(con, view)) stop("View does not exist in database.")
 
-  sql <- build_sql("DROP VIEW ", ident(view),
+  sql <- build_sql("DROP VIEW ", ident_schema_table(view),
     con = con)
   send_query(con@conn, sql)
 }
 
 #' @export
-db_query_fields.VerticaConnection <- function(con, table, ...){
-  fields <- paste0("SELECT * FROM ",table," WHERE 0=1")
-  qry <- send_query(con@conn, fields, useGetQuery=TRUE)
-  names(qry)
-}
-
-#' @export
-db_get_cols <- function(con, sql, ...){
-  fields <- paste0("SELECT * FROM (",sql,") AS foo WHERE 0=1")
+db_query_fields.VerticaConnection <- function(con, sql, ...){
+  assert_that(is.string(sql), is.sql(sql))
+  from <- if(is.schema_table(sql)) ident_schema_table(sql)
+          else sql_subquery(con, sql, "master")
+  fields <- build_sql("SELECT * FROM ", from, " WHERE 0=1")
   qry <- send_query(con@conn, fields, useGetQuery=TRUE)
   names(qry)
 }
 
 #' @export
 db_query_rows.VerticaConnection <- function(con, sql, ...) {
-  from <- paste0("(",sql,")")
-  rows <- paste0("SELECT count(*) FROM ", from, " as foo")
+  assert_that(is.string(sql), is.sql(sql))
+  from <- if(is.schema_table(sql)) ident_schema_table(sql)
+          else sql_subquery(con, sql, "master")
+  rows <- paste0("SELECT count(*) FROM ", from)
   as.integer(send_query(con@conn, rows, useGetQuery=TRUE)[[1]])
 }
 
@@ -535,16 +546,16 @@ select <- function(.arg,...,evalNames=FALSE,collapse=TRUE) {
 #' @param collapse collapse query into subquery (DEFAULT is TRUE); FALSE is needed for certain procedures quiring that the procedure name cannot be a part of a subquery
 #' @return a tbl_vertica object
 #' @export
-mutate <- function(.data,...,evalNames=FALSE,collapse=TRUE) {
+mutate <- function(.data, ..., evalNames=FALSE, collapse=TRUE) {
   if(is(.data,"tbl_vertica")) {
-    mutate_(.data, .dots = lazyeval::lazy_dots(...),.evalNames=evalNames,.collapse=collapse)
+    mutate_(.data, .dots = lazyeval::lazy_dots(...), .evalNames=evalNames, .collapse=collapse)
   } else {
     dplyr::mutate(.data, ...)
   }
 }
 
 #' @export
-mutate_.tbl_vertica <- function(.data, ..., .dots, .evalNames = FALSE,.collapse=TRUE) {
+mutate_.tbl_vertica <- function(.data, ..., .dots, .evalNames = FALSE, .collapse=TRUE) {
   dots <- lazyeval::all_dots(.dots, ..., all_named = !.evalNames)
   input <- partial_eval(dots, .data)
 
@@ -552,11 +563,11 @@ mutate_.tbl_vertica <- function(.data, ..., .dots, .evalNames = FALSE,.collapse=
 
   if(.evalNames) .data$select <- NULL
 
-  new <- update(.data, select = c(.data$select,input))
+  new <- update(.data, select = c(.data$select, input))
  
   if(.evalNames) {
-    new_cols <- db_get_cols(new$src$con,new$query$sql)
-    new_cols <- sapply(new_cols,as.name)
+    new_cols <- db_query_fields(new$src$con, new$query$sql)
+    new_cols <- sapply(new_cols, as.name)
     new$select <- new_cols
   }
   
@@ -577,8 +588,8 @@ sql_escape_ident.VerticaConnection <- function(con, x) {
 db_analyze.VerticaConnection <- function(con, table, ...) {
    assert_that(is.string(table))
 
-   query <- paste0("SELECT ANALYZE_STATISTICS('",ident(table),"')")
-   send_query(con@conn, query,useGetQuery=TRUE)
+   query <- build_sql("SELECT ANALYZE_STATISTICS('", gsub('"','', ident_schema_table(table)), "')")
+   send_query(con@conn, query, useGetQuery=TRUE)
 }
 
 #' @export
@@ -616,21 +627,9 @@ sql_select.VerticaConnection <- function(con, select, from, where = NULL,
   out$select <- build_sql("SELECT ", escape(select, collapse = ", ", con = con))
 
   if (length(from) > 0L) { 
-    assert_that(is.character(from))
-
+    assert_that(is.string(from))
+    if(is.schema_table(from)) from <- ident_schema_table(from)
     out$from <- build_sql("FROM ", from, con = con)
-
-    # Currently this fails for JDBC connections
-    if(grepl("\\.",from) && is(con@conn,"vRODBC")) {
-        schemaTables <- getSchemas(con)
-        schemaTables <- paste0(schemaTables[,1],".",schemaTables[,2])
-
-        if(from %in% schemaTables) {
-          splits <- strsplit(from,"\\.")
-          out$from <- build_sql("FROM ",sql(paste0(splits[[1]][[1]],".")),
-                                ident(splits[[1]][[2]]))
-        }
-    } 
   }
 
   if (length(where) > 0L) {
