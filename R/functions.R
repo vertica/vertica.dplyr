@@ -267,3 +267,45 @@ import_udf <- function(src) {
   }, envir = parent.frame(n=2))
 
 }
+
+# Test whether a string matches the '"schema_name"."table_name"' pattern:
+is.schema_table <- function(tablename) {
+  if(!is.string(tablename)) return(FALSE)
+  grepl('^".*"\\.".*"$', tablename)
+}
+
+# Extract schema and table names from a possibly "packed" table name.
+# The following are possible scenarios:
+#  - tablename is provided as a packed string with schema's name before the dot
+#    and table's name after the dot, and both are within double quotemarks (important!):
+#    tablename = '"schema_name"."table_name"'
+#  - tablename is a string that doesn't match the above pattern:
+#    then tablename is considered to be the name of a table and the name of schema
+#    is taken from the value of the "dplyr.vertica_default_schema" option
+#    which is set by default to be "public".
+# Returns a list with schema and table string elements.
+#' @export
+get_schema_table <- function(tablename) {
+  assert_that(is.string(tablename))
+
+  if(is.schema_table(tablename)) {
+    schema <- sub('^"(.*?)"\\."(.*)"$', "\\1", tablename, perl=T)
+    table <- sub('^"(.*?)"\\."(.*)"$', "\\2", tablename, perl=T)
+  } else {
+    schema <- getOption("dplyr.vertica_default_schema")
+    table <- tablename
+  }
+  list(schema=schema, table=table)
+}
+
+# Returns a proper sql piece for the "schema_name"."table_name" construct.
+# In a way, it is a slightly more complex identifier than dplyr would assume,
+# so cannot assign 'ident' class to it as it would break many things.
+# If table name isn't fully specified (schema name is absent), the default schema name 
+# stored in the "dplyr.vertica_default_schema" option is used.
+#' @export
+ident_schema_table <- function(tablename) {
+  n <- get_schema_table(tablename)
+  build_sql(ident(n$schema), ".", ident(n$table))
+}
+
