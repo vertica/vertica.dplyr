@@ -412,12 +412,7 @@ db_has_table.VerticaConnection <- function(con, table) {
   st <- get_schema_table(table)
   tbl_query <- paste0("SELECT COUNT(*) N FROM all_tables WHERE lower(table_name)=\'", tolower(st$table),
                       "\' AND lower(schema_name)=\'", tolower(st$schema),"\'")
-  if(con@type=="ODBC") {
-    res <- sqlQuery(con@conn, tbl_query)
-  }
-  else {
-    res <- dbGetQuery(con@conn, tbl_query)
-  }
+  res <- send_query(con@conn, tbl_query, useGetQuery=TRUE)
   res$N > 0
 }
 
