@@ -462,7 +462,7 @@ db_drop_view.VerticaConnection <- function(con, view) {
 db_query_fields.VerticaConnection <- function(con, sql, ...){
   assert_that(is.string(sql), is.sql(sql))
   from <- if(is.schema_table(sql)) ident_schema_table(sql)
-          else sql_subquery(con, sql, "master")
+          else sql
   fields <- build_sql("SELECT * FROM ", from, " WHERE 0=1")
   qry <- send_query(con@conn, fields, useGetQuery=TRUE)
   names(qry)
