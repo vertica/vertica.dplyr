@@ -507,7 +507,7 @@ db_explain.VerticaConnection <- function(con, sql, ...) {
 #' table2 <- select(table,some_col_in_table)
 #' }
 #' @export
-select <- function(.arg,...,evalNames=FALSE,collapse=TRUE) {
+select <- function(.arg,...,evalNames=FALSE,collapse=TRUE,transform.UDF=FALSE) {
 
   if(!is(.arg,"tbl") && !is(.arg,"data.frame")) {
       stopifnot(is(.arg,"src_vertica"))
@@ -526,6 +526,8 @@ select <- function(.arg,...,evalNames=FALSE,collapse=TRUE) {
 
     mutate_(tbl,.dots = lazyeval::lazy_dots(...), .evalNames=evalNames,.collapse=collapse)
 
+  } else if(transform.UDF) {
+      mutate_(.arg,.dots = lazyeval::lazy_dots(...), .dropCols=TRUE, .evalNames=FALSE, .collapse=collapse) 
   } else {
     tryCatch(dplyr::select(.arg,...),error=function(e) {
       mutate_(.arg,.dots = lazyeval::lazy_dots(...), .evalNames=evalNames,.collapse=collapse) 
@@ -550,13 +552,13 @@ mutate <- function(.data, ..., evalNames=FALSE, collapse=TRUE) {
 }
 
 #' @export
-mutate_.tbl_vertica <- function(.data, ..., .dots, .evalNames = FALSE, .collapse=TRUE) {
+mutate_.tbl_vertica <- function(.data, ..., .dots, .evalNames = FALSE, .collapse=TRUE, .dropCols=FALSE) {
   dots <- lazyeval::all_dots(.dots, ..., all_named = !.evalNames)
   input <- partial_eval(dots, .data)
 
   .data$mutate <- TRUE
 
-  if(.evalNames) .data$select <- NULL
+  if(.evalNames || .dropCols) .data$select <- NULL
 
   new <- update(.data, select = c(.data$select, input))
  
