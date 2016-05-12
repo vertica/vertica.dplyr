@@ -247,21 +247,28 @@ db_load_from_file <- function(dest, table.name, file.name, sep = " ", skip = 1L,
 #' @export
 copy_to.src_vertica <- function(dest, df, name = deparse(substitute(df)),
                            temporary=FALSE, append=FALSE, fast.load=TRUE, ...) {
+
   assert_that(is.data.frame(df), is.string(name))
+  has_table <- db_has_table(dest$con, name)
 
-  if (db_has_table(dest$con, name)) {
-    warning(name, " already exists.")
-    ans <- readline(prompt = paste0("Replace existing table named `", name, "`?(y/n) "))
-    if(substring(ans,1,1) != "y" && substring(ans,1,1) == "Y") return()
-    else db_drop_table(dest$con, name)
+  if(!append) {
+
+    if(has_table) {
+      warning(name, " already exists.")
+      ans <- readline(prompt = paste0("Replace existing table named `", name, "`?(y/n) "))
+      if(substring(ans,1,1) != "y" && substring(ans,1,1) != "Y") return()
+      else db_drop_table(dest$con, name)
+    }
+
+    types <- db_data_type(dest$con, df)
+    names(types) <- names(df)
+
+    if(temporary) warning("Copying to a temporary table is not supported. Writing to a permanent table.")
+    db_create_table(dest$con, name, types, temporary=FALSE)
+  } else {
+    if(!has_table)
+      stop("Cannot append to non-existing table ", name, ".")
   }
-
-  types <- db_data_type(dest$con, df)
-  names(types) <- names(df)
-
-  if(temporary) warning("Copying to a temporary table is not supported. Writing to a permanent table.")
-
-  db_create_table(dest$con, name, types, temporary=FALSE)
 
   if(fast.load) {
     tmpfilename = paste0("/tmp/", "dplyr_", name, ".csv")
