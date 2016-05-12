@@ -246,7 +246,7 @@ db_load_from_file <- function(dest, table.name, file.name, sep = " ", skip = 1L,
 
 #' @export
 copy_to.src_vertica <- function(dest, df, name = deparse(substitute(df)),
-                           temporary=FALSE, fast.load=TRUE, ...) {
+                           temporary=FALSE, append=FALSE, fast.load=TRUE, ...) {
   assert_that(is.data.frame(df), is.string(name))
 
   if (db_has_table(dest$con, name)) {
@@ -266,7 +266,7 @@ copy_to.src_vertica <- function(dest, df, name = deparse(substitute(df)),
   if(fast.load) {
     tmpfilename = paste0("/tmp/", "dplyr_", name, ".csv")
     write.table(df, file=tmpfilename, sep=",", row.names=FALSE, quote=FALSE)
-    db_load_from_file(dest, name, tmpfilename, sep=",", skip=1L)
+    db_load_from_file(dest, name, tmpfilename, append=append, sep=",", skip=1L)
     file.remove(tmpfilename)
   }
   else {
@@ -527,7 +527,7 @@ select <- function(.arg,...,evalNames=FALSE,collapse=TRUE,transform.UDF=FALSE) {
     mutate_(tbl,.dots = lazyeval::lazy_dots(...), .evalNames=evalNames,.collapse=collapse)
 
   } else if(transform.UDF) {
-      mutate_(.arg,.dots = lazyeval::lazy_dots(...), .dropCols=TRUE, .evalNames=FALSE, .collapse=collapse) 
+      mutate_(.arg,.dots = lazyeval::lazy_dots(...), .dropCols=TRUE, .evalNames=evalNames, .collapse=collapse) 
   } else {
     tryCatch(dplyr::select(.arg,...),error=function(e) {
       mutate_(.arg,.dots = lazyeval::lazy_dots(...), .evalNames=evalNames,.collapse=collapse) 
