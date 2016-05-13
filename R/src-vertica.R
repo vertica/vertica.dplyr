@@ -466,10 +466,13 @@ db_drop_view.VerticaConnection <- function(con, view) {
 }
 
 #' @export
-db_query_fields.VerticaConnection <- function(con, sql, ...){
+db_query_fields.VerticaConnection <- function(con, sql, addAlias=FALSE, ...){
   assert_that(is.string(sql), is.sql(sql))
-  from <- if(is.schema_table(sql) || db_has_table(con,sql)) ident_schema_table(sql)
-          else paste0("(",sql,") AS FOO")
+  from <- if(is.schema_table(sql)) ident_schema_table(sql)
+          else sql
+
+  if(addAlias) from <- paste0("(",from,") AS FOO")
+
   fields <- paste0("SELECT * FROM ", from, " WHERE 0=1")
   qry <- send_query(con@conn, fields, useGetQuery=TRUE)
   names(qry)
@@ -570,7 +573,7 @@ mutate_.tbl_vertica <- function(.data, ..., .dots, .evalNames = FALSE, .collapse
   new <- update(.data, select = c(.data$select, input))
  
   if(.evalNames) {
-    new_cols <- db_query_fields(new$src$con, new$query$sql)
+    new_cols <- db_query_fields(new$src$con, new$query$sql, addAlias=TRUE)
     new_cols <- sapply(new_cols, as.name)
     new$select <- new_cols
   }
