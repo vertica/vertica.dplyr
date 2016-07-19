@@ -144,6 +144,16 @@ Vertica.Query <- R6::R6Class("Vertica.Query",
     fetch = function(n = -1L) {
       if(self$con@type == "ODBC") {
         out <- sqlQuery(self$con@conn, self$sql, n)
+	if(class(out) == "character")
+	{
+		errors = grepl("Exception in processPartitionForR", out)
+		if(any(errors))
+		{
+			out = out[errors]
+			out = out[1]
+			stop(out)
+		}
+	}
         i <- sapply(out, is.factor)
         out[i] <- lapply(out[i], as.character)
       }else { 
