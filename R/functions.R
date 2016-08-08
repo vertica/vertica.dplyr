@@ -223,7 +223,7 @@ vertica_agg_func <- sql_translator(
 
 # Powers translations of scalar and window functions
 #' @export
-src_translate_env.src_vertica <- function(x) {
+sql_translate_env.VerticaConnection <- function(x) {
   sql_variant(scalar = vertica_scalar_func,
   window = vertica_window_func,
   aggregate = vertica_agg_func
@@ -258,7 +258,7 @@ import_udf <- function(src) {
   vertica_scalar_func <- list2env(scalar_funs, dplyr:::copy_env(vertica_scalar_func))
   vertica_window_func <- list2env(transform_funs, dplyr:::copy_env(vertica_window_func))
 
-  assign("src_translate_env.src_vertica", function(x) {
+  assign("sql_translate_env.src_vertica", function(x) {
     sql_variant(
       scalar = vertica_scalar_func,
       window = vertica_window_func,

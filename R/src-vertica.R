@@ -16,7 +16,7 @@
 #Suite 330, Boston, MA 02111-1307 USA
 #####################################################################
 
-setClass("VerticaConnection", representation = representation(conn = "ANY", type = "character"))
+setClass("VerticaConnection",  representation = representation(conn = "ANY", type = "character"))
 
 .VerticaConnection <- function(conn,type) {
   new("VerticaConnection",conn=conn,type=type)
@@ -512,88 +512,6 @@ db_explain.VerticaConnection <- function(con, sql, ...) {
   output[1:(graphVizInd-4)]
 }
 
-# Used to select UDFs without FROM clauses
-#' Like dplyr::select, but allows for the first argument to be a src_vertica object
-#' for SELECT statements without FROM clauses.
-#' @param .arg dplyr tbl OR src_vertica connection object 
-#' @param ... table columns (i.e., as used in mutate())
-#' @param evalNames pre-evaluate the statement to get column names of result (useful for functions that return more than one column)
-#' @param collapse collapse query into subquery (DEFAULT is TRUE); FALSE is needed for certain procedures quiring that the procedure name cannot be a part of a subquery
-#' @return a tbl_vertica object
-#' @examples
-#' \dontrun{
-#' vertica <- src_vertica("VerticaDSN")
-#' table <- select(vertica,foo=some_fun())
-#' table2 <- select(table,some_col_in_table)
-#' }
-#' @export
-select <- function(.arg,...,evalNames=FALSE,collapse=TRUE,transform.UDF=FALSE) {
-
-  if(!is(.arg,"tbl") && !is(.arg,"data.frame")) {
-      stopifnot(is(.arg,"src_vertica"))
-      tbl <- make_tbl(c("vertica", "sql"),
-      src = .arg,              # src object
-      from = NULL,            # table, join, or raw sql
-      select = NULL,          # SELECT: list of symbols
-      summarise = FALSE,      #   interpret select as aggreagte functions?
-      mutate = FALSE,         #   do select vars include new variables?
-      where = NULL,           # WHERE: list of calls
-      group_by = NULL,        # GROUP_BY: list of names
-      order_by = NULL         # ORDER_BY: list of calls
-    )
-  
-    tbl$query <- query(tbl$src$con, sql(" "), NULL)    
-
-    mutate_(tbl,.dots = lazyeval::lazy_dots(...), .evalNames=evalNames,.collapse=collapse)
-
-  } else if(transform.UDF) {
-      mutate_(.arg,.dots = lazyeval::lazy_dots(...), .dropCols=TRUE, .evalNames=evalNames, .collapse=collapse) 
-  } else {
-    tryCatch(dplyr::select(.arg,...),error=function(e) {
-      mutate_(.arg,.dots = lazyeval::lazy_dots(...), .evalNames=evalNames,.collapse=collapse) 
-    })
-  }
-
-}
-
-#' Like dplyr::mutate, but allows for pre-evaluation to get column names (useful for multi-column returning functions)
-#' @param .data dplyr tbl 
-#' @param ... table columns (i.e., as used in dplyr::mutate())
-#' @param evalNames pre-evaluate the statement to get column names of result (useful for functions that return more than one column)
-#' @param collapse collapse query into subquery (DEFAULT is TRUE); FALSE is needed for certain procedures quiring that the procedure name cannot be a part of a subquery
-#' @return a tbl_vertica object
-#' @export
-mutate <- function(.data, ..., evalNames=FALSE, collapse=TRUE) {
-  if(is(.data,"tbl_vertica")) {
-    mutate_(.data, .dots = lazyeval::lazy_dots(...), .evalNames=evalNames, .collapse=collapse)
-  } else {
-    dplyr::mutate(.data, ...)
-  }
-}
-
-#' @export
-mutate_.tbl_vertica <- function(.data, ..., .dots, .evalNames = FALSE, .collapse=TRUE, .dropCols=FALSE) {
-  dots <- lazyeval::all_dots(.dots, ..., all_named = !.evalNames)
-  input <- partial_eval(dots, .data)
-
-  .data$mutate <- TRUE
-
-  if(.evalNames || .dropCols) .data$select <- NULL
-
-  new <- update(.data, select = c(.data$select, input))
- 
-  if(.evalNames) {
-    new_cols <- db_query_fields(new$src$con, new$query$sql, addAlias=TRUE)
-    new_cols <- sapply(new_cols, as.name)
-    new$select <- new_cols
-  }
-  
-  if(.collapse) {
-    collapse(new)
-  } else {
-    new
-  }
-}
 
 #' @export
 sql_escape_ident.VerticaConnection <- function(con, x) {
@@ -627,73 +545,17 @@ get_data_type <- function(val, ...) {
 }
 
 #' @export
-sql_set_op.VerticaConnection <- dplyr:::sql_set_op.DBIConnection
+#sql_set_op.VerticaConnection <- dplyr:::sql_set_op.DBIConnection
 
-# Override allows SELECT without FROM, as well as support for schema tables
-#' @export
-sql_select.VerticaConnection <- function(con, select, from, where = NULL,
-                                     group_by = NULL, having = NULL,
-                                     order_by = NULL, limit = NULL,
-                                     offset = NULL, ...) {
-
-  out <- vector("list", 8)
-  names(out) <- c("select", "from", "where", "group_by", "having", "order_by",
-    "limit", "offset")
-
-  assert_that(is.character(select), length(select) > 0L)
-  out$select <- build_sql("SELECT ", escape(select, collapse = ", ", con = con))
-
-  if (length(from) > 0L) { 
-    assert_that(is.string(from))
-    if(is.schema_table(from)) from <- ident_schema_table(from)
-    out$from <- build_sql("FROM ", from, con = con)
-  }
-
-  if (length(where) > 0L) {
-    assert_that(is.character(where))
-    out$where <- build_sql("WHERE ",
-      escape(where, collapse = " AND ", con = con))
-  }
-
-  if (!is.null(group_by)) {
-    assert_that(is.character(group_by), length(group_by) > 0L)
-    out$group_by <- build_sql("GROUP BY ",
-      escape(group_by, collapse = ", ", con = con))
-  }
-
-  if (!is.null(having)) {
-    assert_that(is.character(having), length(having) == 1L)
-    out$having <- build_sql("HAVING ",
-      escape(having, collapse = ", ", con = con))
-  }
-
-  if (!is.null(order_by)) {
-    assert_that(is.character(order_by), length(order_by) > 0L)
-    out$order_by <- build_sql("ORDER BY ",
-      escape(order_by, collapse = ", ", con = con))
-  }
-
-  if (!is.null(limit) && !is.na(limit)) {
-    assert_that(is.integer(limit), length(limit) == 1L)
-    out$limit <- build_sql("LIMIT ", limit, con = con)
-  }
-
-  if (!is.null(offset)) {
-    assert_that(is.integer(offset), length(offset) == 1L)
-    out$offset <- build_sql("OFFSET ", offset, con = con)
-  }
-
-  escape(unname(dplyr:::compact(out)), collapse = "\n", parens = FALSE, con = con)
-}
 
 #' @export
-sql_escape_string.VerticaConnection <- dplyr:::sql_escape_string.DBIConnection
+#sql_escape_string.VerticaConnection <- dplyr:::sql_escape_string.DBIConnection
 #' @export
-sql_join.VerticaConnection <- dplyr:::sql_join.DBIConnection
+#sql_join.VerticaConnection <- dplyr:::sql_join.DBIConnection
 #' @export
-sql_subquery.VerticaConnection <- dplyr:::sql_subquery.DBIConnection  
+#sql_subquery.VerticaConnection <- dplyr:::sql_subquery.DBIConnection  
 #' @export
-sql_semi_join.VerticaConnection <- dplyr:::sql_semi_join.DBIConnection
+#sql_semi_join.VerticaConnection <- dplyr:::sql_semi_join.DBIConnection
                           
 setGeneric("checkDB", function (con) {
   standardGeneric("checkDB")
@@ -759,4 +621,213 @@ getSchemas <- function(con) {
              HPdata = "Could not load one or more of HPdata and/or Distributed R and their dependencies. Please download: https://github.com/vertica/DistributedR/ " )
       stop(msg)
     })
+}
+
+sql_subquery.VerticaConnection <- dplyr:::sql_subquery.SQLiteConnection
+
+collect.tbl_vertica <- function(x, ..., n = 1e+05, warn_incomplete = TRUE)
+{
+    assert_that(length(n) == 1, n > 0L)
+    if (n == Inf) {
+        n <- -1
+    }
+    sql <- sql_render(x)
+    out <- send_query(x$src$con@conn, sql)
+    head(out,n)
+}
+
+
+sql_build.op_udf <- function(op, con, ...)
+{
+    subquery <- sql_build(op$x, con)
+    expr <- partial_eval(op$dots)
+
+    group_vars <- dplyr:::c.sql(ident(op_grps(op$x)), con = con)
+    order_vars <- dplyr:::c.sql(op_sort(op$x), con = con)
+
+    object <- list()
+    object$from <- subquery
+    object$partition = group_vars
+    object$order = order_vars
+    object$params = expr$params
+    object$frame = NULL
+    object$args = op$args
+
+
+    object$expr = expr
+    class(object) <- "udf_query"
+    return(object)
+}
+
+sql_render.single_udf <- function(expr, function_partition, function_order, 
+		      function_frame, names_list,
+		      con, ..., root)
+{
+    if(!is.null(expr))
+    {
+	params <- expr$params
+	expr$params = NULL
+	params = eval(params)
+	param_names = names(params)
+	if(length(param_names) < length(params))
+		stop("All expressions must be named")
+	params = lapply(params, function(x) dplyr::translate_sql(x,
+		con = con, vars = names_list, 
+    		window = FALSE))
+
+	if(length(params) > 0)
+	{
+	params = lapply(1:length(params), function(i) 
+		sql(paste(param_names[i], " = ", params[i],
+		sep=" ", collapse = " ")))
+	params = do.call(sql_vector,params)
+	params = build_sql(sql(" USING PARAMETERS "), params)
+	}
+	else
+	{
+	params = sql("")
+	}
+	function_expr = dplyr::translate_sql(expr,
+		con = con, vars = names_list, 
+    		window = FALSE)
+	function_expr = substring(function_expr,1,nchar(function_expr)-1)
+	function_expr = build_sql(function_expr, params, ")")
+    }
+    over(function_expr, function_partition, 
+	function_order, function_frame)
+}
+
+sql_render.udf_query <- function (query, con = NULL, ..., root = FALSE)
+{
+    names_list <- sql_translate_env(con)
+    from <- sql_render(query$from, root = root)
+    sub_query_fields <- db_query_fields(con, from)
+    names_list <- c(names_list, sub_query_fields)
+    function_expr <- function_partition <- function_order <- function_frame <- NULL
+
+    if(!is.null(query$partition))
+	function_partition = dplyr::translate_sql(query$partition,
+		con = con, vars = names_list, 
+    		window = FALSE)
+    if(!is.null(query$order))
+	function_order = dplyr::translate_sql(query$order,
+		con = con, vars = names_list, 
+    		window = FALSE)
+    if(!is.null(query$frame))
+	function_frame = dplyr::translate_sql(query$frame,
+		con = con, vars = names_list, 
+    		window = FALSE)
+
+    if(!is.null(dim(query$args$udx)))	
+    	udfs <- apply(query$args$udx,1, any)
+    else
+	udfs <- any(query$args$udx)
+    udf_sql <- which(udfs)
+    not_udf_sql <- which(!udfs)
+
+    if(length(udf_sql) > 1)
+    	stop("Only one user defined transform allowed per query")
+
+    if(length(not_udf_sql) > 1)
+    	stop("Cannot specify anything other than user defined transforms in the list")
+
+    udf_sql <- sql_render.single_udf(query$expr[[udf_sql]] ,
+    	    function_partition, function_order, 
+	    function_frame, names_list,
+	    con, root = root)
+
+
+    query_sql = list(udf_sql)
+
+    query_sql$sep = ","
+    query_sql <- sql(do.call(paste, query_sql))
+
+    from <- sql_subquery(con, from)
+    sql_query <- build_sql("SELECT ", query_sql, " FROM ", from)
+    return(sql_query)
+
+}
+
+
+execute_udf <- function(.data, ...)
+{
+	
+	.dots <- lazyeval::lazy_dots( ...)
+	
+	add_op_single("udf", .data, dots = .dots) 
+}
+
+summarise_.tbl_vertica <- function(.data, ..., .dots)
+{
+    expr <- partial_eval(.dots) 
+    possible_udf <- lapply(expr, function(x){
+    	if(length(x) > 1)
+		 return(x[[1]])
+	else
+		 return(x)
+	})
+    udx_list <- list_udf(vertica) 
+    transform_udx_list <- udx_list[udx_list$PROCEDURE_TYPE == "Transform",]
+    transform_udx_list <- transform_udx_list$function.names
+    transform_udx_list <- as.character(transform_udx_list)
+
+    udx = sapply(transform_udx_list, 
+    	function(x) grepl(x, possible_udf, ignore.case = TRUE))
+    if(any(udx))
+    {
+    dots <- lazyeval::all_dots(.dots, ...)
+    add_op_single("udf", .data, dots = dots, args = list(udx = udx))
+    }
+    else
+    {
+	dplyr:::summarise_.tbl_lazy(.data, ..., .dots = .dots)
+    }
+}
+
+
+select_.src_vertica <- function(.data, ..., .dots)
+{
+    new_table <- make_tbl(c("vertica", "sql", "lazy"), src = .data, 
+    	      ops = structure(list(src = .data, dots = .dots), class = c("op_system")))
+    
+}
+
+sql_build.op_system <- function(op, con, ...)
+{
+    expr <- partial_eval(op$dots) 
+    object = list(expr = expr)
+    class(object) <- "system_query"
+    return(object)
+}
+
+sql_render.system_query <- function (query, con = NULL, ..., root = FALSE)
+{
+
+    names_list <- sql_translate_env(con)
+
+    query_sql = lapply(query$expr, dplyr::translate_sql_, 
+		con = con, vars = names_list, 
+    		window = FALSE)
+
+    query_sql$sep = ","
+    query_sql <- sql(do.call(paste, query_sql))
+
+    sql_query <- build_sql("SELECT ", query_sql )
+    return(sql_query)
+
+}
+
+op_vars.op_system <- function(op)
+{
+	NULL
+}
+
+op_grps.op_system <- function(op)
+{
+	NULL
+}
+
+op_sort.op_system <- function(op)
+{
+	NULL
 }
