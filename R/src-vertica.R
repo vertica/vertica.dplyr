@@ -757,7 +757,7 @@ execute_udf <- function(.data, ...)
 	add_op_single("udf", .data, dots = .dots) 
 }
 
-summarise_.tbl_vertica <- function(.data, ..., .dots)
+select_.tbl_vertica <- function(.data, ..., .dots)
 {
     expr <- partial_eval(.dots) 
     possible_udf <- lapply(expr, function(x){
