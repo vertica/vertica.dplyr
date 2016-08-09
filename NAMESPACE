@@ -3,6 +3,7 @@
 S3method(copy_to,src_vertica)
 S3method(db_analyze,VerticaConnection)
 S3method(db_create_index,VerticaConnection)
+S3method(db_create_indexes,VerticaConnection)
 S3method(db_create_table,VerticaConnection)
 S3method(db_create_table,src_vertica)
 S3method(db_data_type,VerticaConnection)

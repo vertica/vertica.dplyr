@@ -383,9 +383,10 @@ db_save_view <- function(table, name, temporary = FALSE) {
 
 #' @export
 db_save_query.VerticaConnection <- function(con, sql, name, temporary = FALSE,...){
-  if(temporary) warning("Creating temporary tables is not supported. Saving as a permanent table.")
-  t_sql <- build_sql("CREATE TABLE ", ident_schema_table(name), " AS ", sql, con = con)
-  send_query(con@conn, t_sql)
+  if(temporary) temporary = sql("TEMPORARY")
+  else temporary = sql("")
+  t_sql <- build_sql("CREATE ", temporary, " TABLE ", ident_schema_table(name), " AS ", sql, con = con)
+  print(send_query(con@conn, t_sql))
   name
 }
 
@@ -525,6 +526,12 @@ db_analyze.VerticaConnection <- function(con, table, ...) {
 
    query <- build_sql("SELECT ANALYZE_STATISTICS('", gsub('"','', ident_schema_table(table)), "')")
    send_query(con@conn, query, useGetQuery=TRUE)
+}
+
+
+ db_create_indexes.VerticaConnection <- function(con, table, indexes = NULL, unique = FALSE, ...) 
+{
+  warning("User-created indexes are unsupported")
 }
 
 #' @export
@@ -771,6 +778,7 @@ select_.tbl_vertica <- function(.data, ..., .dots)
     transform_udx_list <- transform_udx_list$function.names
     transform_udx_list <- as.character(transform_udx_list)
 
+
     udx = sapply(transform_udx_list, 
     	function(x) grepl(x, possible_udf, ignore.case = TRUE))
     if(any(udx))
@@ -780,7 +788,7 @@ select_.tbl_vertica <- function(.data, ..., .dots)
     }
     else
     {
-	dplyr:::summarise_.tbl_lazy(.data, ..., .dots = .dots)
+	dplyr:::select_.tbl_lazy(.data, ..., .dots = .dots)
     }
 }
 
@@ -789,6 +797,8 @@ select_.src_vertica <- function(.data, ..., .dots)
 {
     new_table <- make_tbl(c("vertica", "sql", "lazy"), src = .data, 
     	      ops = structure(list(src = .data, dots = .dots), class = c("op_system")))
+    new_table$ops$vars = op_vars(new_table$ops)
+    return (new_table)
     
 }
 
@@ -819,7 +829,12 @@ sql_render.system_query <- function (query, con = NULL, ..., root = FALSE)
 
 op_vars.op_system <- function(op)
 {
-	NULL
+	if(is.null(op$vars))
+	{
+		query <- sql_render(sql_build(op, op$src), op$src)
+		op$vars <- db_query_fields(op$src$con, query, addAlias = TRUE)		
+	}
+	return(op$vars)
 }
 
 op_grps.op_system <- function(op)
