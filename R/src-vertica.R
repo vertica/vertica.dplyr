@@ -115,85 +115,7 @@ tbl.src_vertica <- function(src, from, ...) {
   tbl_sql("vertica", src = src, from = from, ...)
 }
 
-#' @export
-query.VerticaConnection <- function(con, sql, .vars) {
-  assert_that(is.string(sql))
-  Vertica.Query$new(con, sql(sql), .vars)
-}
 
-Vertica.Query <- R6::R6Class("Vertica.Query",
-  private = list(
-    .nrow = NULL,
-    .vars = NULL
-  ),
-  public = list(
-    con = NULL,
-    sql = NULL,
-
-    initialize = function(con, sql, vars) {
-      self$con <- con
-      self$sql <- sql
-      private$.vars <- vars
-    },
-
-    print = function(...) {
-      cat("<Query> ", self$sql, "\n", sep = "")
-      print(self$con)
-    },
-
-    fetch = function(n = -1L) {
-      if(self$con@type == "ODBC") {
-      	out <- sqlQuery(self$con@conn, self$sql, n)
-	if(class(out) == "character")
-	{
-		errors = grepl("Exception in processPartitionForR", out)
-		if(any(errors))
-		{
-			out = out[errors]
-			out = out[1]
-			stop(out)
-		}
-	}
-        i <- sapply(out, is.factor)
-        out[i] <- lapply(out[i], as.character)
-      }else { 
-        res <- dbSendQuery(self$con@conn, self$sql)
-        on.exit(dbClearResult(res))
-
-        out <- fetch(res, n)
-        dplyr:::res_warn_incomplete(res)
-      }
-      out
-    },
-
-    fetch_paged = function(chunk_size = 1e4, callback) {
-      stop("Temporarily unsupported operation")
-      qry <- dbSendQuery(self$con, self$sql)
-      on.exit(dbClearResult(qry))
-
-      while (!dbHasCompleted(qry)) {
-        chunk <- fetch(qry, chunk_size)
-        callback(chunk)
-      }
-
-      invisible(TRUE)
-    },
-
-    vars = function() {
-      private$.vars
-    },
-
-    nrow = function() {
-      if (!is.null(private$.nrow)) return(private$.nrow)
-      private$.nrow <- db_query_rows(self$con, self$sql)
-      private$.nrow
-    },
-
-    ncol = function() {
-      length(self$vars())
-    }
-  )
-)
 
 #' Loads a file (typically CSV) from disk to Vertica.
 #'
@@ -229,7 +151,10 @@ db_load_from_file <- function(dest, table.name, file.name, sep = " ", skip = 1L,
 
   itable <- ident_schema_table(table.name)
 
-  if(!append) {
+  table.nrow <- db_query_rows(vertica$con, 
+  	     build_sql("SELECT * FROM ", sql(table.name)))
+
+  if(!append && table.nrow > 0) {
     delete_sql <- build_sql("DELETE FROM ", itable)
     send_query(dest$con@conn, delete_sql)
   }
@@ -554,18 +479,6 @@ get_data_type <- function(val, ...) {
             else "VARCHAR(255)"
 }
 
-#' @export
-#sql_set_op.VerticaConnection <- dplyr:::sql_set_op.DBIConnection
-
-
-#' @export
-#sql_escape_string.VerticaConnection <- dplyr:::sql_escape_string.DBIConnection
-#' @export
-#sql_join.VerticaConnection <- dplyr:::sql_join.DBIConnection
-#' @export
-#sql_subquery.VerticaConnection <- dplyr:::sql_subquery.DBIConnection  
-#' @export
-#sql_semi_join.VerticaConnection <- dplyr:::sql_semi_join.DBIConnection
                           
 setGeneric("checkDB", function (con) {
   standardGeneric("checkDB")
@@ -620,6 +533,14 @@ send_query.vRODBC <- function(conn, query, ...) {
 			out = out[1]
 			stop(out)
 		}
+		errors = grepl("ERROR", out)
+		if(any(errors))
+		{
+			out = out[errors]
+			out = out[1]
+			stop(out)
+		}
+
 	}
   out
 }
@@ -654,7 +575,18 @@ collect.tbl_vertica <- function(x, ..., n = 1e+05, warn_incomplete = TRUE)
     }
     sql <- sql_render(x)
     if( as.integer(n) > 0)
-    	sql <- build_sql(sql, " LIMIT ", as.integer(n))
+    { 
+	if( is.element( "name", x$ops))
+	{
+	    if(x$ops$name != "head" && x$ops$name != "tail")
+    	    	sql <- build_sql(sql, " LIMIT ", as.integer(n))
+	}
+	else
+	{
+	    sql <- build_sql(sql, " LIMIT ", as.integer(n))
+	}
+
+    }
     out <- send_query(x$src$con@conn, sql)
     head(out,n)
 }
@@ -710,7 +642,7 @@ sql_render.udf_query <- function (query, con = NULL, ..., root = FALSE)
 	vars_group = function_partition, 
 	vars_order = function_order)
 	
-     query <- sql_vector(query)
+     query <- sql_vector(query, parens = FALSE, collapse = ",")
      from <- sql_subquery(con, from)
      query <- build_sql("SELECT ", query, " FROM ", from)
      return(query)
@@ -782,7 +714,7 @@ sql_render.system_query <- function (query, con = NULL, ..., root = FALSE)
 		con = con, 
     		window = FALSE)
 
-    query_sql <- sql_vector(query_sql)
+    query_sql <- sql_vector(query_sql, parens = FALSE, collapse = ",")
     query_sql <- build_sql("SELECT ", query_sql)
     return(query_sql)
 
