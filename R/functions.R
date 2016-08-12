@@ -221,6 +221,7 @@ vertica_agg_func <- sql_translator(
   ,bitwXor = sql_prefix("bit_xor",1)
 )
 
+
 # Powers translations of scalar and window functions
 #' @export
 sql_translate_env.VerticaConnection <- function(x) {
@@ -228,6 +229,10 @@ sql_translate_env.VerticaConnection <- function(x) {
   window = vertica_window_func,
   aggregate = vertica_agg_func
   )
+}
+
+sql_translate_env.src_vertica <- function(x) {
+   sql_translate_env(x$con)
 }
 
 # Queries the database for UDFs, and appropriately "registers" them in vertica.dplyr
@@ -258,7 +263,7 @@ import_udf <- function(src) {
   vertica_scalar_func <- list2env(scalar_funs, dplyr:::copy_env(vertica_scalar_func))
   vertica_window_func <- list2env(transform_funs, dplyr:::copy_env(vertica_window_func))
 
-  assign("sql_translate_env.src_vertica", function(x) {
+  assign("sql_translate_env.VerticaConnection", function(x) {
     sql_variant(
       scalar = vertica_scalar_func,
       window = vertica_window_func,

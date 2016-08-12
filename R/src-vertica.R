@@ -143,7 +143,7 @@ Vertica.Query <- R6::R6Class("Vertica.Query",
 
     fetch = function(n = -1L) {
       if(self$con@type == "ODBC") {
-        out <- sqlQuery(self$con@conn, self$sql, n)
+      	out <- sqlQuery(self$con@conn, self$sql, n)
 	if(class(out) == "character")
 	{
 		errors = grepl("Exception in processPartitionForR", out)
@@ -386,7 +386,7 @@ db_save_query.VerticaConnection <- function(con, sql, name, temporary = FALSE,..
   if(temporary) temporary = sql("TEMPORARY")
   else temporary = sql("")
   t_sql <- build_sql("CREATE ", temporary, " TABLE ", ident_schema_table(name), " AS ", sql, con = con)
-  print(send_query(con@conn, t_sql))
+  send_query(con@conn, t_sql)
   name
 }
 
@@ -479,10 +479,13 @@ db_drop_view.VerticaConnection <- function(con, view) {
 #' @export
 db_query_fields.VerticaConnection <- function(con, sql, addAlias=FALSE, ...){
   assert_that(is.string(sql), is.sql(sql))
-  from <- if(is.schema_table(sql)) ident_schema_table(sql)
-          else sql
 
-  if(addAlias) from <- paste0("(",from,") AS FOO")
+  from <- sql
+  if(is.schema_table(sql)) from <- ident_schema_table(sql)
+
+
+  if(addAlias || !db_has_table(vertica$con, sql)) 
+  	      from <- paste0("(",from,") AS FOO")
 
   fields <- paste0("SELECT * FROM ", from, " WHERE 0=1")
   qry <- send_query(con@conn, fields, useGetQuery=TRUE)
@@ -607,7 +610,18 @@ send_query.JDBCConnection <- function(conn, query, useGetQuery=FALSE) {
 }
 
 send_query.vRODBC <- function(conn, query, ...) {
-  sqlQuery(conn,query)
+  out <- sqlQuery(conn,query)
+  if(class(out) == "character")
+	{
+		errors = grepl("Exception in processPartitionForR", out)
+		if(any(errors))
+		{
+			out = out[errors]
+			out = out[1]
+			stop(out)
+		}
+	}
+  out
 }
 
 getSchemas <- function(con) {
@@ -639,6 +653,8 @@ collect.tbl_vertica <- function(x, ..., n = 1e+05, warn_incomplete = TRUE)
         n <- -1
     }
     sql <- sql_render(x)
+    if( as.integer(n) > 0)
+    	sql <- build_sql(sql, " LIMIT ", as.integer(n))
     out <- send_query(x$src$con@conn, sql)
     head(out,n)
 }
@@ -647,111 +663,57 @@ collect.tbl_vertica <- function(x, ..., n = 1e+05, warn_incomplete = TRUE)
 sql_build.op_udf <- function(op, con, ...)
 {
     subquery <- sql_build(op$x, con)
-    expr <- partial_eval(op$dots)
 
-    group_vars <- dplyr:::c.sql(ident(op_grps(op$x)), con = con)
-    order_vars <- dplyr:::c.sql(op_sort(op$x), con = con)
+
+    group_vars <- sql(op_grps(op$x))
+    order_vars <- sql(op_sort(op$x))
+
+    if(length(group_vars) == 0)
+    	group_vars = NULL
+    if(length(order_vars) == 0)
+        order_vars = NULL
 
     object <- list()
     object$from <- subquery
     object$partition = group_vars
     object$order = order_vars
-    object$params = expr$params
-    object$frame = NULL
     object$args = op$args
 
 
-    object$expr = expr
+    object$expr = partial_eval(op$dots)
     class(object) <- "udf_query"
     return(object)
 }
 
-sql_render.single_udf <- function(expr, function_partition, function_order, 
-		      function_frame, names_list,
-		      con, ..., root)
-{
-    if(!is.null(expr))
-    {
-	params <- expr$params
-	expr$params = NULL
-	params = eval(params)
-	param_names = names(params)
-	if(length(param_names) < length(params))
-		stop("All expressions must be named")
-	params = lapply(params, function(x) dplyr::translate_sql(x,
-		con = con, vars = names_list, 
-    		window = FALSE))
-
-	if(length(params) > 0)
-	{
-	params = lapply(1:length(params), function(i) 
-		sql(paste(param_names[i], " = ", params[i],
-		sep=" ", collapse = " ")))
-	params = do.call(sql_vector,params)
-	params = build_sql(sql(" USING PARAMETERS "), params)
-	}
-	else
-	{
-	params = sql("")
-	}
-	function_expr = dplyr::translate_sql(expr,
-		con = con, vars = names_list, 
-    		window = FALSE)
-	function_expr = substring(function_expr,1,nchar(function_expr)-1)
-	function_expr = build_sql(function_expr, params, ")")
-    }
-    over(function_expr, function_partition, 
-	function_order, function_frame)
-}
-
 sql_render.udf_query <- function (query, con = NULL, ..., root = FALSE)
 {
-    names_list <- sql_translate_env(con)
     from <- sql_render(query$from, root = root)
     sub_query_fields <- db_query_fields(con, from)
-    names_list <- c(names_list, sub_query_fields)
-    function_expr <- function_partition <- function_order <- function_frame <- NULL
+    function_expr <- NULL
+    function_partition <- NULL
+    function_order <- NULL
+
 
     if(!is.null(query$partition))
-	function_partition = dplyr::translate_sql(query$partition,
-		con = con, vars = names_list, 
+	function_partition = dplyr::translate_sql_(query$partition,
+		con = con, vars = sub_query_fields, 
     		window = FALSE)
     if(!is.null(query$order))
-	function_order = dplyr::translate_sql(query$order,
-		con = con, vars = names_list, 
-    		window = FALSE)
-    if(!is.null(query$frame))
-	function_frame = dplyr::translate_sql(query$frame,
-		con = con, vars = names_list, 
+	function_order = dplyr::translate_sql_(query$order,
+		con = con, vars = sub_query_fields, 
     		window = FALSE)
 
-    if(!is.null(dim(query$args$udx)))	
-    	udfs <- apply(query$args$udx,1, any)
-    else
-	udfs <- any(query$args$udx)
-    udf_sql <- which(udfs)
-    not_udf_sql <- which(!udfs)
-
-    if(length(udf_sql) > 1)
-    	stop("Only one user defined transform allowed per query")
-
-    if(length(not_udf_sql) > 1)
-    	stop("Cannot specify anything other than user defined transforms in the list")
-
-    udf_sql <- sql_render.single_udf(query$expr[[udf_sql]] ,
-    	    function_partition, function_order, 
-	    function_frame, names_list,
-	    con, root = root)
-
-
-    query_sql = list(udf_sql)
-
-    query_sql$sep = ","
-    query_sql <- sql(do.call(paste, query_sql))
-
-    from <- sql_subquery(con, from)
-    sql_query <- build_sql("SELECT ", query_sql, " FROM ", from)
-    return(sql_query)
+     query <- lapply(query$expr, dplyr::translate_sql_,
+     	window = TRUE, 
+	vars = db_query_fields(con, from),
+	con = con,
+	vars_group = function_partition, 
+	vars_order = function_order)
+	
+     query <- sql_vector(query)
+     from <- sql_subquery(con, from)
+     query <- build_sql("SELECT ", query, " FROM ", from)
+     return(query)
 
 }
 
@@ -773,22 +735,25 @@ select_.tbl_vertica <- function(.data, ..., .dots)
 	else
 		 return(x)
 	})
-    udx_list <- list_udf(vertica) 
-    transform_udx_list <- udx_list[udx_list$PROCEDURE_TYPE == "Transform",]
-    transform_udx_list <- transform_udx_list$function.names
-    transform_udx_list <- as.character(transform_udx_list)
+    transform_udx_list <- list_udf(vertica, "Transform") 
+    transform_udx_list <- as.character(transform_udx_list$function.names)
+
 
 
     udx = sapply(transform_udx_list, 
     	function(x) grepl(x, possible_udf, ignore.case = TRUE))
-    if(any(udx))
+    if(sum(udx) == 1)
     {
     dots <- lazyeval::all_dots(.dots, ...)
     add_op_single("udf", .data, dots = dots, args = list(udx = udx))
     }
-    else
+    else if(sum(udx) == 0)
     {
 	dplyr:::select_.tbl_lazy(.data, ..., .dots = .dots)
+    }
+    else
+    {
+	stop("Can only have 1 transform function per select statement")
     }
 }
 
@@ -813,17 +778,13 @@ sql_build.op_system <- function(op, con, ...)
 sql_render.system_query <- function (query, con = NULL, ..., root = FALSE)
 {
 
-    names_list <- sql_translate_env(con)
-
     query_sql = lapply(query$expr, dplyr::translate_sql_, 
-		con = con, vars = names_list, 
+		con = con, 
     		window = FALSE)
 
-    query_sql$sep = ","
-    query_sql <- sql(do.call(paste, query_sql))
-
-    sql_query <- build_sql("SELECT ", query_sql )
-    return(sql_query)
+    query_sql <- sql_vector(query_sql)
+    query_sql <- build_sql("SELECT ", query_sql)
+    return(query_sql)
 
 }
 
@@ -832,7 +793,7 @@ op_vars.op_system <- function(op)
 	if(is.null(op$vars))
 	{
 		query <- sql_render(sql_build(op, op$src), op$src)
-		op$vars <- db_query_fields(op$src$con, query, addAlias = TRUE)		
+		op$vars <- db_query_fields(op$src$con, query, addAlias = TRUE)	
 	}
 	return(op$vars)
 }
