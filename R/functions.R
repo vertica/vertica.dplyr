@@ -65,24 +65,16 @@ list_udf <- function(src,type=NULL) {
 }
 
 validate_range <- function(range) {
-  if(is.character(range)) {
-    range[1] = tryCatch({val=eval(parse(text=range[1]))
-                 assert_that(!is.na(val))
-                 val
-               },
-                 error = function(e){
-                 range[1] = -Inf
-               })
+  if(is.character(range) || inherits(range, "sql")) {
+    range = as.character(range)
+    range = paste("c",range, collapse = "",sep = "")
 
-    range[2] = tryCatch({val=eval(parse(text=range[2]))
-                 assert_that(!is.na(val))
-                 val
-               },
-                 error = function(e){
-                 range[2] = Inf
-               }) 
+    range = eval(parse(text = range))
+    if(is.null(range[1]))
+	range[1] <- -Inf
+    if(is.null(range[2]))
+	range[2] <- Inf
     }
-
     if(!is.null(range)) range <- as.numeric(range)
 
   range

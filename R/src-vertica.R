@@ -576,10 +576,12 @@ collect.tbl_vertica <- function(x, ..., n = 1e+05, warn_incomplete = TRUE)
     sql <- sql_render(x)
     if( as.integer(n) > 0)
     { 
-	if( is.element( "name", x$ops))
+	if(  "name" %in% names(x$ops))
 	{
 	    if(x$ops$name != "head" && x$ops$name != "tail")
+	    {
     	    	sql <- build_sql(sql, " LIMIT ", as.integer(n))
+	    }
 	}
 	else
 	{
@@ -588,7 +590,10 @@ collect.tbl_vertica <- function(x, ..., n = 1e+05, warn_incomplete = TRUE)
 
     }
     out <- send_query(x$src$con@conn, sql)
-    head(out,n)
+    if(n > 0)
+    	head(out,n)
+    else
+	out
 }
 
 
