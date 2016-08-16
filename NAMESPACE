@@ -42,6 +42,7 @@ S3method(op_grps,op_system)
 S3method(op_sort,op_system)
 S3method(sql_build,op_custom_R_udf)
 S3method(sql_render,custom_R_udf_query)
+S3method(print,tbl_vertica)
 
 
 export(db_drop_view)

@@ -567,7 +567,7 @@ getSchemas <- function(con) {
 
 sql_subquery.VerticaConnection <- dplyr:::sql_subquery.SQLiteConnection
 
-collect.tbl_vertica <- function(x, ..., n = 1e+05, warn_incomplete = TRUE)
+collect.tbl_vertica <- function(x, ..., n = Inf, warn_incomplete = TRUE)
 {
     assert_that(length(n) == 1, n > 0L)
     if (n == Inf) {
@@ -698,7 +698,7 @@ select_.tbl_vertica <- function(.data, ..., .dots)
 select_.src_vertica <- function(.data, ..., .dots)
 {
     new_table <- make_tbl(c("vertica", "sql", "lazy"), src = .data, 
-    	      ops = structure(list(src = .data, dots = .dots), class = c("op_system")))
+    	      ops = structure(list(src = .data, dots = .dots, name = "system_query"), class = c("op_system")))
     new_table$ops$vars = op_vars(new_table$ops)
     return (new_table)
     
@@ -730,7 +730,8 @@ op_vars.op_system <- function(op)
 	if(is.null(op$vars))
 	{
 		query <- sql_render(sql_build(op, op$src), op$src)
-		op$vars <- db_query_fields(op$src$con, query, addAlias = TRUE)	
+		#op$vars <- names(send_query(op$src$con@conn, query))
+		op$vars <- NULL
 	}
 	return(op$vars)
 }
@@ -743,4 +744,27 @@ op_grps.op_system <- function(op)
 op_sort.op_system <- function(op)
 {
 	NULL
+}
+
+print.tbl_vertica <- function (x, ..., n = NULL, width = NULL) 
+{
+    cat("Source:   query ", dim_desc(x), "\n", sep = "")
+    cat("Database: ", src_desc(x$src), "\n", sep = "")
+    grps <- op_grps(x$ops)
+    if (length(grps) > 0) {
+        cat("Groups: ", commas(op_grps(x$ops)), "\n", sep = "")
+    }
+    cat("\n")
+    if(x$ops$name == "system_query")
+    {
+	results <- collect(x)
+	if(!is.null(n))
+		results <- head(results,n)
+	print(results)
+    }
+    else
+    {
+	print(trunc_mat(x, n = n, width = width))
+    }
+    invisible(x)
 }

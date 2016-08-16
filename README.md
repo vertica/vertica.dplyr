@@ -613,12 +613,29 @@ For a list of functions that are currently tested to work in vertica.dplyr and t
 ## User-Defined Functions
 vertica.dplyr also allows user-defined functions (UDFs) in HP Vertica to be run. `list_udf()` will allow you to take a `src_vertica` connection object and will return to you a list of currently registered UDFs. This will return a data frame of UDFs, as well as their types. To invoke a UDF, simply follow the same conventions as the other functions mentioned above (using mutate or select). UDFs take in optional *parameters*, as specified in Vertica with a `USING PARAMETERS` clause following the normal function arguments. To supply these parameters, supply a `list()` in R to the `params` argument in the function, corresponding to a key-value mapping for the parameters, for example, as below:
 
+
 ```{udf invocation eval=FALSE}
 table <- tbl(vertica,"some_table")
 result <- mutate(table,fun=some_udf(col1,col2,params=list(param1='x',foo=3,bar=3.4)))
 ```
 
 The above example will result in a `SELECT` on the columns of `table` and `SOME_UDF(col1,col2 USING PARAMETERS param1='x', foo=3, bar=3.4) AS fun`.
+
+####Transform functions
+vertica.dplyr also allows users to call user-defined transform functions which are a special subclass of UDFs. The syntax to call these functions is slightly different from the general UDF syntax. They must be called with a select command. 
+
+```
+table <- tbl(vertica,"some_table")
+result <- select(table,fun=some_transform_udf(col1,col2,params=list(param1='x',foo=3,bar=3.4)))
+```
+
+Transform UDFs by default partition by the entire table however it is possible to call the transform udf on partitioned data:
+
+```
+table <- tbl(vertica,"some_table")
+table <- group_by(table, col3)
+result <- select(table,fun=some_transform_udf(col1,col2,params=list(param1='x',foo=3,bar=3.4)))
+```
 
 ## Other functionality
 
@@ -649,6 +666,37 @@ Database: Vertica ODBC Connection
   <fctr>
 1 dbadmin
 ```
+
+#### Calling External Procedures
+
+vertica.dplyr allows for external procedures to be called with the following syntax:
+
+```
+results <- select(vertica, some_external_procedure('arg1', 'arg2'))
+```
+
+In the above command, we pass in the vertica source object and call an external procedure with the name "some_external_procedure" and pass it string arguments 'arg1' and 'arg2'. Below is a more concrete example:
+
+```
+copy_to(vertica, iris, "my_iris")
+my_model <- select(vertica, kmeans('my_iris_model', 'my_iris', 'Sepal.Length, Sepal.Width, Petal.Width, Petal.Length', 3L))
+my_model
+```
+
+The above has the following output:
+
+```
+Source:   query [?? x 0]
+Database: Vertica ODBC Connection
+-----+DSN: VerticaDSN
+-----+Host: 127.0.0.1
+-----+DB Version: 08.00.0000
+-----+ODBC Version: 03.80
+
+                      KMEANS
+1 Finished in 6 iterations\n
+```
+
 
 ### Creating a table in HP Vertica
 
