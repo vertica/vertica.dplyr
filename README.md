@@ -614,6 +614,7 @@ For a list of functions that are currently tested to work in vertica.dplyr and t
 vertica.dplyr also allows user-defined functions (UDFs) in HP Vertica to be run. `list_udf()` will allow you to take a `src_vertica` connection object and will return to you a list of currently registered UDFs. This will return a data frame of UDFs, as well as their types. To invoke a UDF, simply follow the same conventions as the other functions mentioned above (using mutate or select). UDFs take in optional *parameters*, as specified in Vertica with a `USING PARAMETERS` clause following the normal function arguments. To supply these parameters, supply a `list()` in R to the `params` argument in the function, corresponding to a key-value mapping for the parameters, for example, as below:
 
 
+
 ```{udf invocation eval=FALSE}
 table <- tbl(vertica,"some_table")
 result <- mutate(table,fun=some_udf(col1,col2,params=list(param1='x',foo=3,bar=3.4)))
@@ -635,6 +636,58 @@ Transform UDFs by default partition by the entire table however it is possible t
 table <- tbl(vertica,"some_table")
 table <- group_by(table, col3)
 result <- select(table,fun=some_transform_udf(col1,col2,params=list(param1='x',foo=3,bar=3.4)))
+```
+
+#### Custom Transform functions 
+It is also possible to send an R function to vertica and call the function as a user defined function. Currently are several restrictions:
+*Any additional parameters must be less than 32 mb
+*The user defined functions must be installed
+*The function must take a data.frame input and produce a data.frame output
+*Any R libraries that are required by the function must be installed on vertica
+
+
+The syntax is the following:
+```
+execute_custom_R_udf(FUN, my_tbl, 
+			  named_additional_arg1 = 1, 
+			  named_additional_arg2 = 2)
+```
+
+Here is an example that illustrates this:
+
+```
+copy_to(vertica, iris, "iris_table")
+iris_table <- tbl(vertica, "iris")
+model <- randomForest(Species ~ ., iris,ntree = 1)
+result <- execute_custom_R_udf(function(x) {
+       library(randomForest);
+       predict(model,x)
+}, iris_table, model = model)
+result
+```
+
+The above code ouputs the following:
+```
+Source:   query [?? x 5]
+Database: Vertica ODBC Connection
+-----+DSN: VerticaDSN
+-----+Host: 127.0.0.1
+-----+DB Version: 08.00.0000
+-----+ODBC Version: 03.80
+
+     col1
+   <fctr>
+1  setosa
+2  setosa
+3  setosa
+4  setosa
+5  setosa
+6  setosa
+7  setosa
+8  setosa
+9  setosa
+10 setosa
+# ... with more rows
 ```
 
 ## Other functionality
@@ -667,7 +720,7 @@ Database: Vertica ODBC Connection
 1 dbadmin
 ```
 
-#### Calling External Procedures
+#### External Procedures
 
 vertica.dplyr allows for external procedures to be called with the following syntax:
 

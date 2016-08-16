@@ -755,16 +755,19 @@ print.tbl_vertica <- function (x, ..., n = NULL, width = NULL)
         cat("Groups: ", commas(op_grps(x$ops)), "\n", sep = "")
     }
     cat("\n")
-    if(x$ops$name == "system_query")
+    if( "name" %in% names(x$ops))
     {
-	results <- collect(x)
-	if(!is.null(n))
-		results <- head(results,n)
-	print(results)
-    }
-    else
-    {
-	print(trunc_mat(x, n = n, width = width))
+    	if(x$ops$name == "system_query")
+    	{
+		results <- collect(x)
+		if(!is.null(n))
+			results <- head(results,n)
+		print(results)
+    	}
+    	else
+    	{
+		print(trunc_mat(x, n = n, width = width))
+    	}
     }
     invisible(x)
 }
