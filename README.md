@@ -869,7 +869,7 @@ Access Path:+-SORT [Cost: 282K, Rows: 3] (PATH ID: 1)
 
 ### Saving queries to views and tables
 
-`compute` and `db_save_view` allow you to save your `tbl` objects to tables and views in HP Vertica, respectively. Once saved as a view or table, they can be transported to Distributed R via `tbl2dframe`,`tbl2darray`, and `tbl2darrays` (described in the following section). For a given `tbl` named `foo`:
+`compute` and `db_save_view` allow you to save your `tbl` objects to tables and views in HP Vertica, respectively. For a given `tbl` named `foo`:
 
 
 ```r
