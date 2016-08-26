@@ -11,9 +11,8 @@ vignette: >
 
 # vertica.dplyr
 
-vertica.dplyr is an R package developed by Hewlett-Packard that provides HP Vertica backend support for the [dplyr][1] package. dplyr provides tools for data wrangling using R data frames. With vertica.dplyr, users can now do the same in Vertica tables without moving the data into R. vertica.dplyr also provides the following additional features to simplify working with HP Vertica and HP Distributed R: 
+vertica.dplyr is an R package developed by Hewlett-Packard that provides HP Vertica backend support for the [dplyr][1] package. dplyr provides tools for data wrangling using R data frames. With vertica.dplyr, users can now do the same in Vertica tables without moving the data into R. vertica.dplyr also provides the following additional features to simplify working with HP Vertica: 
 
-* [HPdata][4]-style functions (data transport from HP Vertica to HP Distributed R via the data loader), namely tbl2d**object** (where **object** is either **array** or **frame**), that are compatible with dplyr tbl objects.
 * Easy CSV loading into HP Vertica.
 * copy_to functionality that takes advantage of HP Vertica's fast **COPY LOCAL** feature.
 * Connectivity to HP Vertica through either JDBC or ODBC.
@@ -46,7 +45,7 @@ There are also verbs for multiple tables, such as left_join(), inner_join(), sem
 
 For data that resides in a database, dplyr provides an interface to access tables and manipulate them directly inside the database as though they were local data frames. The dplyr package provides support for MySQL, Postgres, BigQuery, and SQLite backends. vertica.dplyr enables dplyr to work with HP Vertica.
 
-vertica.dplyr adds dplyr-support for HP Vertica, as well as serving as the basic "intermediary" between R (and HP Distributed R) and HP Vertica, which includes data preparation, data transfer, and HP Vertica function invocation. 
+vertica.dplyr adds dplyr-support for HP Vertica, as well as serving as the basic "intermediary" between R and HP Vertica, which includes data preparation, data transfer, and HP Vertica function invocation. 
 
 ## Obtaining the Package
 You can obtain vertica.dplyr from [Github][8].
@@ -146,11 +145,11 @@ The following are some basic principles of a "tbl":
 
 * The basic dplyr object is the "tbl" (or in this case, tbl_vertica). This is a reference to SQL, some not-yet executed query that results in a new table.
 
-* Conceptually, a "tbl_vertica" object is nothing more than a wrapper object that contains a SQL query, a connection to a DB, and related internal metadata. These tables behave in the same manner as data.frames would when used in dplyr, except now they are actually meant to be executed in database.
+* Conceptually, a "tbl_vertica" object is nothing more than a recursive list used to represent a sequence of operations on some table belonging to HP Vertica
 
-* Most operations (excluding those that convert tbls to data.frames, or saves them to tables/view in HP Vertica, or converts them to dobjects in Distributed R) performed on a tbl result in another tbl. Essentially, you can chain these operations together, meaning that the SQL statement builds up in complexity.
+* Most operations (excluding those that convert tbls to data.frames or saves them to tables/view in HP Vertica) performed on a tbl result in another tbl. Essentially, you can chain these operations together, meaning that the SQL statements that these operations generate build up in complexity.
 
-* Tbl objects are lazily executed on the DB; that is, when you do not require the results (for example, moving the results to R, or looking at the data by printing the results in R), nothing is executed in HP Vertica.
+* tbl objects are for the most part lazily executed on Vertica; that is, when you do not require the results (for example, moving the results to R, or looking at the data by printing the results in R), nothing is executed in HP Vertica. Sometimes to generate or lazily store the objects, vertica.dplyr will need to query Vertica for some meta-data (for example asking column names or number of rows).
 
 ## Retrieving a tbl reference
 
@@ -161,25 +160,16 @@ One way to get started with a tbl_vertica object is to directly access an existi
 salaries <- tbl(vertica,"Salaries")
 ```
 
-`salaries` now contains a simple select statement on "Salaries" in HP Vertica. You can examine the SQL query associated with a `tbl_vertica` by accessing the `query` member of the object:
+The `salaries` object now contains information to generate a simple select statement on the "Salaries" table in HP Vertica. You can examine the SQL query associated with a `tbl_vertica` by calling the `sql_render` function on the object:
 
 
 ```r
-salaries$query
+sql_render(salaries)
 ```
 
 ```
-## <Query> SELECT "yearID", "teamID", "lgID", "playerID", "salary"
-## FROM "Salaries"
-## An object of class "VerticaConnection"
-## Slot "conn":
-## vRODBC Connection 10
-## Details:
-##   case=nochange
-##   DSN=VerticaDSN
-## 
-## Slot "type":
-## [1] "ODBC"
+<SQL> SELECT *
+FROM "Salaries"
 ```
 
 As mentioned before, nothing is yet executed in DB. If, however, you would like to see what the data looks like, you can ask R to print `salaries`.
@@ -190,25 +180,26 @@ salaries
 ```
 
 ```
-## Source: Vertica ODBC Connection
-## -----+DSN: VerticaDSN
-## -----+Host: 127.0.0.1
-## -----+DB Version: 07.01.0002
-## -----+ODBC Version: 03.80
-## From: Salaries [23,956 x 5]
-## 
-##    yearID teamID lgID  playerID salary
-## 1    1985    ATL   NL barkele01 870000
-## 2    1985    ATL   NL bedrost01 550000
-## 3    1985    ATL   NL benedbr01 545000
-## 4    1985    ATL   NL  campri01 633333
-## 5    1985    ATL   NL ceronri01 625000
-## 6    1985    ATL   NL chambch01 800000
-## 7    1985    ATL   NL dedmoje01 150000
-## 8    1985    ATL   NL forstte01 483333
-## 9    1985    ATL   NL garbege01 772000
-## 10   1985    ATL   NL harpete01 250000
-## ..    ...    ...  ...       ...    ...
+Source:   query [?? x 5]
+Database: Vertica ODBC Connection
+-----+DSN: VerticaDSN
+-----+Host: 127.0.0.1
+-----+DB Version: 08.00.0000
+-----+ODBC Version: 03.80
+
+   yearID teamID   lgID  playerID salary
+    <dbl> <fctr> <fctr>    <fctr>  <dbl>
+1    1985    ATL     NL barkele01 870000
+2    1985    ATL     NL bedrost01 550000
+3    1985    ATL     NL benedbr01 545000
+4    1985    ATL     NL  campri01 633333
+5    1985    ATL     NL ceronri01 625000
+6    1985    ATL     NL chambch01 800000
+7    1985    ATL     NL dedmoje01 150000
+8    1985    ATL     NL forstte01 483333
+9    1985    ATL     NL garbege01 772000
+10   1985    ATL     NL harpete01 250000
+# ... with more rows
 ```
 
 The query is actually executed in the database, and the first few rows can be seen in the result (dplyr automatically takes the HEAD and displays it).
@@ -225,21 +216,22 @@ head(flights,10)
 ```
 
 ```
-## Source: local data frame [10 x 16]
-## 
-##    year month day dep_time dep_delay arr_time arr_delay carrier tailnum
-## 1  2013     1   1      517         2      830        11      UA  N14228
-## 2  2013     1   1      533         4      850        20      UA  N24211
-## 3  2013     1   1      542         2      923        33      AA  N619AA
-## 4  2013     1   1      544        -1     1004       -18      B6  N804JB
-## 5  2013     1   1      554        -6      812       -25      DL  N668DN
-## 6  2013     1   1      554        -4      740        12      UA  N39463
-## 7  2013     1   1      555        -5      913        19      B6  N516JB
-## 8  2013     1   1      557        -3      709       -14      EV  N829AS
-## 9  2013     1   1      557        -3      838        -8      B6  N593JB
-## 10 2013     1   1      558        -2      753         8      AA  N3ALAA
-## Variables not shown: flight (int), origin (chr), dest (chr), air_time
-##   (dbl), distance (dbl), hour (dbl), minute (dbl)
+# A tibble: 10 x 19
+    year month   day dep_time sched_dep_time dep_delay arr_time sched_arr_time
+   <int> <int> <int>    <int>          <int>     <dbl>    <int>          <int>
+1   2013     1     1      517            515         2      830            819
+2   2013     1     1      533            529         4      850            830
+3   2013     1     1      542            540         2      923            850
+4   2013     1     1      544            545        -1     1004           1022
+5   2013     1     1      554            600        -6      812            837
+6   2013     1     1      554            558        -4      740            728
+7   2013     1     1      555            600        -5      913            854
+8   2013     1     1      557            600        -3      709            723
+9   2013     1     1      557            600        -3      838            846
+10  2013     1     1      558            600        -2      753            745
+# ... with 11 more variables: arr_delay <dbl>, carrier <chr>, flight <int>,
+#   tailnum <chr>, origin <chr>, dest <chr>, air_time <dbl>, distance <dbl>,
+#   hour <dbl>, minute <dbl>, time_hour <time>
 ```
 
 ```r
@@ -247,7 +239,7 @@ nrow(flights)
 ```
 
 ```
-## [1] 336776
+[1] 336776
 ```
 Copy it over to HP Vertica using `copy_to` and view the result:
 
@@ -258,27 +250,28 @@ flights_vertica
 ```
 
 ```
-## Source: Vertica ODBC Connection
-## -----+DSN: VerticaDSN
-## -----+Host: 127.0.0.1
-## -----+DB Version: 07.01.0002
-## -----+ODBC Version: 03.80
-## From: flights [336,776 x 16]
-## 
-##    year month day dep_time dep_delay arr_time arr_delay carrier tailnum
-## 1  2013     1   1      517         2      830        11      UA  N14228
-## 2  2013     1   1      533         4      850        20      UA  N24211
-## 3  2013     1   1      542         2      923        33      AA  N619AA
-## 4  2013     1   1      544        -1     1004       -18      B6  N804JB
-## 5  2013     1   1      554        -6      812       -25      DL  N668DN
-## 6  2013     1   1      554        -4      740        12      UA  N39463
-## 7  2013     1   1      555        -5      913        19      B6  N516JB
-## 8  2013     1   1      557        -3      709       -14      EV  N829AS
-## 9  2013     1   1      557        -3      838        -8      B6  N593JB
-## 10 2013     1   1      558        -2      753         8      AA  N3ALAA
-## ..  ...   ... ...      ...       ...      ...       ...     ...     ...
-## Variables not shown: flight (dbl), origin (chr), dest (chr), air_time
-##   (dbl), distance (dbl), hour (dbl), minute (dbl)
+Source:   query [?? x 19]
+Database: Vertica ODBC Connection
+-----+DSN: VerticaDSN
+-----+Host: 127.0.0.1
+-----+DB Version: 08.00.0000
+-----+ODBC Version: 03.80
+
+    year month   day dep_time sched_dep_time dep_delay arr_time sched_arr_time
+   <dbl> <dbl> <dbl>    <dbl>          <dbl>     <dbl>    <dbl>          <dbl>
+1   2013     1     1      517            515         2      830            819
+2   2013     1     1      533            529         4      850            830
+3   2013     1     1      542            540         2      923            850
+4   2013     1     1      544            545        -1     1004           1022
+5   2013     1     1      554            600        -6      812            837
+6   2013     1     1      554            558        -4      740            728
+7   2013     1     1      555            600        -5      913            854
+8   2013     1     1      557            600        -3      709            723
+9   2013     1     1      557            600        -3      838            846
+10  2013     1     1      558            600        -2      753            745
+# ... with more rows, and 11 more variables: arr_delay <dbl>, carrier <fctr>,
+#   flight <dbl>, tailnum <fctr>, origin <fctr>, dest <fctr>, air_time <dbl>,
+#   distance <dbl>, hour <dbl>, minute <dbl>, time_hour <fctr>
 ```
 
 `copy_to` has automatically extracted the data types in the data.frame, converted them to a schema in HP Vertica, created the table in HP Vertica, and copied it over to the DB. It returns another tbl_vertica object which, in this case, is named `flights_vertica`.
@@ -305,25 +298,26 @@ q1
 ```
 
 ```
-## Source: Vertica ODBC Connection
-## -----+DSN: VerticaDSN
-## -----+Host: 127.0.0.1
-## -----+DB Version: 07.01.0002
-## -----+ODBC Version: 03.80
-## From: flights [336,776 x 5]
-## 
-##    year month day origin arr_delay
-## 1  2013     1   1    EWR        11
-## 2  2013     1   1    LGA        20
-## 3  2013     1   1    JFK        33
-## 4  2013     1   1    JFK       -18
-## 5  2013     1   1    LGA       -25
-## 6  2013     1   1    EWR        12
-## 7  2013     1   1    EWR        19
-## 8  2013     1   1    LGA       -14
-## 9  2013     1   1    JFK        -8
-## 10 2013     1   1    LGA         8
-## ..  ...   ... ...    ...       ...
+Source:   query [?? x 5]
+Database: Vertica ODBC Connection
+-----+DSN: VerticaDSN
+-----+Host: 127.0.0.1
+-----+DB Version: 08.00.0000
+-----+ODBC Version: 03.80
+
+    year month   day origin arr_delay
+   <dbl> <dbl> <dbl> <fctr>     <dbl>
+1   2013     1     1    EWR        11
+2   2013     1     1    LGA        20
+3   2013     1     1    JFK        33
+4   2013     1     1    JFK       -18
+5   2013     1     1    LGA       -25
+6   2013     1     1    EWR        12
+7   2013     1     1    EWR        19
+8   2013     1     1    LGA       -14
+9   2013     1     1    JFK        -8
+10  2013     1     1    LGA         8
+# ... with more rows
 ```
 
 ### Filter: Select rows matching provided criteria
@@ -340,48 +334,40 @@ q2
 ```
 
 ```
-## Source: Vertica ODBC Connection
-## -----+DSN: VerticaDSN
-## -----+Host: 127.0.0.1
-## -----+DB Version: 07.01.0002
-## -----+ODBC Version: 03.80
-## From: flights [281,637 x 5]
-## Filter: year == 2013, month > 1, month < 12 
-## 
-##    year month day origin arr_delay
-## 1  2013     2   1    LGA        NA
-## 2  2013     2   1    EWR        NA
-## 3  2013     2   1    EWR        NA
-## 4  2013     2   1    EWR        NA
-## 5  2013     2   1    EWR        NA
-## 6  2013     2   1    EWR        NA
-## 7  2013     2   1    EWR        NA
-## 8  2013     2   1    EWR        NA
-## 9  2013     2   1    EWR        NA
-## 10 2013     2   1    EWR        NA
-## ..  ...   ... ...    ...       ...
+Source:   query [?? x 5]
+Database: Vertica ODBC Connection
+-----+DSN: VerticaDSN
+-----+Host: 127.0.0.1
+-----+DB Version: 08.00.0000
+-----+ODBC Version: 03.80
+
+    year month   day origin arr_delay
+   <dbl> <dbl> <dbl> <fctr>     <dbl>
+1   2013     2     1    EWR        NA
+2   2013     2     1    EWR        NA
+3   2013     2     1    EWR        NA
+4   2013     2     1    EWR        NA
+5   2013     2     1    EWR        NA
+6   2013     2     1    EWR        NA
+7   2013     2     1    EWR        NA
+8   2013     2     1    EWR        NA
+9   2013     2     1    EWR        NA
+10  2013     2     1    EWR        NA
+# ... with more rows
 ```
 The data now printed out show flights beginning with the first of February. Just as when you retrieved a reference to an HP Vertica table, you can view the query associated with this filter operation:
 
 
 ```r
 # Look at what we did in terms of SQL
-q2$query
+sql_render(q2)
 ```
 
 ```
-## <Query> SELECT "year" AS "year", "month" AS "month", "day" AS "day", "origin" AS "origin", "arr_delay" AS "arr_delay"
-## FROM "flights"
-## WHERE "year" = 2013.0 AND "month" > 1.0 AND "month" < 12.0
-## An object of class "VerticaConnection"
-## Slot "conn":
-## vRODBC Connection 10
-## Details:
-##   case=nochange
-##   DSN=VerticaDSN
-## 
-## Slot "type":
-## [1] "ODBC"
+<SQL> SELECT *
+FROM (SELECT "year" AS "year", "month" AS "month", "day" AS "day", "origin" AS "origin", "arr_delay" AS "arr_delay"
+FROM "flights") "jmuwgnfpix"
+WHERE (("year" = 2013.0) AND ("month" > 1.0) AND ("month" < 12.0))
 ```
 As may be expected, the query resulting from a **filter** involves a `WHERE` clause.
 
@@ -395,27 +381,28 @@ q3
 ```
 
 ```
-## Source: Vertica ODBC Connection
-## -----+DSN: VerticaDSN
-## -----+Host: 127.0.0.1
-## -----+DB Version: 07.01.0002
-## -----+ODBC Version: 03.80
-## From: flights [273,928 x 5]
-## Filter: year == 2013, month > 1, month < 12, !is.na(arr_delay) 
-## 
-##    year month day origin arr_delay
-## 1  2013     2   1    EWR         4
-## 2  2013     2   1    EWR        -4
-## 3  2013     2   1    LGA         8
-## 4  2013     2   1    JFK       -10
-## 5  2013     2   1    JFK         9
-## 6  2013     2   1    EWR       -14
-## 7  2013     2   1    JFK        -1
-## 8  2013     2   1    LGA         9
-## 9  2013     2   1    LGA         0
-## 10 2013     2   1    LGA        -4
-## ..  ...   ... ...    ...       ...
+Source:   query [?? x 5]
+Database: Vertica ODBC Connection
+-----+DSN: VerticaDSN
+-----+Host: 127.0.0.1
+-----+DB Version: 08.00.0000
+-----+ODBC Version: 03.80
+
+    year month   day origin arr_delay
+   <dbl> <dbl> <dbl> <fctr>     <dbl>
+1   2013     2     1    EWR         4
+2   2013     2     1    EWR        -4
+3   2013     2     1    LGA         8
+4   2013     2     1    JFK       -10
+5   2013     2     1    JFK         9
+6   2013     2     1    EWR       -14
+7   2013     2     1    JFK        -1
+8   2013     2     1    LGA         9
+9   2013     2     1    LGA         0
+10  2013     2     1    LGA        -4
+# ... with more rows
 ```
+
 There are no longer any NA values. dplyr has converted the R-style boolean expression on `arr_delay` for `NA` values into `NOT NULL` in SQL.
 
 ### Summarise, group_by, and arrange: GROUP BY airports and ORDER them by average delay
@@ -449,19 +436,18 @@ q5
 ```
 
 ```
-## Source: Vertica ODBC Connection
-## -----+DSN: VerticaDSN
-## -----+Host: 127.0.0.1
-## -----+DB Version: 07.01.0002
-## -----+ODBC Version: 03.80
-## From: <derived table> [?? x 3]
-## Arrange: desc(delay) 
-## 
-##    origin count    delay
-## 1     EWR 98101 7.733132
-## 2     LGA 84702 5.370121
-## 3     JFK 91125 5.268258
-## ..    ...   ...      ...
+Source:   query [?? x 3]
+Database: Vertica ODBC Connection
+-----+DSN: VerticaDSN
+-----+Host: 127.0.0.1
+-----+DB Version: 08.00.0000
+-----+ODBC Version: 03.80
+
+  origin count    delay
+  <fctr> <dbl>    <dbl>
+1    EWR 98101 7.733132
+2    LGA 84702 5.370121
+3    JFK 91125 5.268258
 ```
 
 From these results you can see that, compared to other airports servicing the NYC region, EWR (Newark) had, by roughly two-and-a-half minutes, the worst average arrival delay in 2013.
@@ -471,25 +457,20 @@ Now look again at the query by accessing `$query` of a `tbl` object. Use the `q5
 
 
 ```r
-q5$query
+sql_render(q5)
 ```
 
 ```
-## <Query> SELECT "origin", "count", "delay"
-## FROM (SELECT "origin", count(*) AS "count", AVG("arr_delay") AS "delay"
-## FROM "flights"
-## WHERE "year" = 2013.0 AND "month" > 1.0 AND "month" < 12.0 AND NOT("arr_delay"IS NULL)
-## GROUP BY "origin") AS "_W22"
-## ORDER BY "delay" DESC
-## An object of class "VerticaConnection"
-## Slot "conn":
-## vRODBC Connection 10
-## Details:
-##   case=nochange
-##   DSN=VerticaDSN
-## 
-## Slot "type":
-## [1] "ODBC"
+<SQL> SELECT *
+FROM (SELECT "origin", count(*) AS "count", AVG("arr_delay") AS "delay"
+FROM (SELECT *
+FROM (SELECT *
+FROM (SELECT "year" AS "year", "month" AS "month", "day" AS "day", "origin" AS "origin", "arr_delay" AS "arr_delay"
+FROM "flights") "sqdztmepka"
+WHERE (("year" = 2013.0) AND ("month" > 1.0) AND ("month" < 12.0))) "gbpmhczqce"
+WHERE (NOT(("arr_delay") IS NULL))) "tzdmvoxcvd"
+GROUP BY "origin") "psjbudtstt"
+ORDER BY "delay" DESC
 ```
 
 Note that this query is a complex query that has been built off of the initial tbl created by the `copy_to` statement since before the data preparation began. This means that, if all of the intermediate results had not been printed in console, *nothing from q1 through q5 would have even touched the DB*.
@@ -585,26 +566,27 @@ delays
 ```
 
 ```
-## Source: Vertica ODBC Connection
-## -----+DSN: VerticaDSN
-## -----+Host: 127.0.0.1
-## -----+DB Version: 07.01.0002
-## -----+ODBC Version: 03.80
-## From: <derived table> [?? x 4]
-## Grouped by: month 
-## 
-##    month day  avg_delay delay_smoothed
-## 1      1   1 12.6510229      5.3091754
-## 2      1   2 12.6928879      3.8439629
-## 3      1   3  5.7333333      2.9600202
-## 4      1   4 -1.9328194      2.6017649
-## 5      1   5 -1.5258020      1.7517068
-## 6      1   6  4.2364294      1.1595273
-## 7      1   7 -4.9473118     -1.1738523
-## 8      1   8 -3.2275785     -0.9703107
-## 9      1   9 -0.2642777     -1.1605861
-## 10     1  10 -5.8988159     -0.9461796
-## ..   ... ...        ...            ...
+Source:   query [?? x 4]
+Database: Vertica ODBC Connection
+-----+DSN: VerticaDSN
+-----+Host: 127.0.0.1
+-----+DB Version: 08.00.0000
+-----+ODBC Version: 03.80
+Groups: month
+
+   month   day  avg_delay delay_smoothed
+   <dbl> <dbl>      <dbl>          <dbl>
+1      1     1 12.6510229      5.3091754
+2      1     2 12.6928879      3.8439629
+3      1     3  5.7333333      2.9600202
+4      1     4 -1.9328194      2.6017649
+5      1     5 -1.5258020      1.7517068
+6      1     6  4.2364294      1.1595273
+7      1     7 -4.9473118     -1.1738523
+8      1     8 -3.2275785     -0.9703107
+9      1     9 -0.2642777     -1.1605861
+10     1    10 -5.8988159     -0.9461796
+# ... with more rows
 ```
 
 Notice that it's necessary to set `partition=NULL` to clear the implicit `PARTITION BY MONTH,DAY` that exists from our earlier `group_by`.
@@ -631,12 +613,82 @@ For a list of functions that are currently tested to work in vertica.dplyr and t
 ## User-Defined Functions
 vertica.dplyr also allows user-defined functions (UDFs) in HP Vertica to be run. `list_udf()` will allow you to take a `src_vertica` connection object and will return to you a list of currently registered UDFs. This will return a data frame of UDFs, as well as their types. To invoke a UDF, simply follow the same conventions as the other functions mentioned above (using mutate or select). UDFs take in optional *parameters*, as specified in Vertica with a `USING PARAMETERS` clause following the normal function arguments. To supply these parameters, supply a `list()` in R to the `params` argument in the function, corresponding to a key-value mapping for the parameters, for example, as below:
 
+
+
 ```{udf invocation eval=FALSE}
 table <- tbl(vertica,"some_table")
 result <- mutate(table,fun=some_udf(col1,col2,params=list(param1='x',foo=3,bar=3.4)))
 ```
 
 The above example will result in a `SELECT` on the columns of `table` and `SOME_UDF(col1,col2 USING PARAMETERS param1='x', foo=3, bar=3.4) AS fun`.
+
+####Transform functions
+vertica.dplyr also allows users to call user-defined transform functions which are a special subclass of UDFs. The syntax to call these functions is slightly different from the general UDF syntax. They must be called with a select command. 
+
+```
+table <- tbl(vertica,"some_table")
+result <- select(table,fun=some_transform_udf(col1,col2,params=list(param1='x',foo=3,bar=3.4)))
+```
+
+Transform UDFs by default partition by the entire table however it is possible to call the transform udf on partitioned data:
+
+```
+table <- tbl(vertica,"some_table")
+table <- group_by(table, col3)
+result <- select(table,fun=some_transform_udf(col1,col2,params=list(param1='x',foo=3,bar=3.4)))
+```
+
+#### Custom Transform functions 
+It is also possible to send an R function to vertica and call the function as a user defined function. Currently are several restrictions:
+*Any additional parameters must be less than 32 mb
+*The user defined functions must be installed
+*The function must take a data.frame input and produce a data.frame output
+*Any R libraries that are required by the function must be installed on vertica
+
+
+The syntax is the following:
+```
+execute_custom_R_udf(FUN, my_tbl, 
+			  named_additional_arg1 = 1, 
+			  named_additional_arg2 = 2)
+```
+
+Here is an example that illustrates this:
+
+```
+copy_to(vertica, iris, "iris_table")
+iris_table <- tbl(vertica, "iris")
+model <- randomForest(Species ~ ., iris,ntree = 1)
+result <- execute_custom_R_udf(function(x) {
+       library(randomForest);
+       predict(model,x)
+}, iris_table, model = model)
+result
+```
+
+The above code ouputs the following:
+```
+Source:   query [?? x 5]
+Database: Vertica ODBC Connection
+-----+DSN: VerticaDSN
+-----+Host: 127.0.0.1
+-----+DB Version: 08.00.0000
+-----+ODBC Version: 03.80
+
+     col1
+   <fctr>
+1  setosa
+2  setosa
+3  setosa
+4  setosa
+5  setosa
+6  setosa
+7  setosa
+8  setosa
+9  setosa
+10 setosa
+# ... with more rows
+```
 
 ## Other functionality
 
@@ -656,17 +708,48 @@ select(vertica,user=user())
 ```
 
 ```
-## Source: Vertica ODBC Connection
-## -----+DSN: VerticaDSN
-## -----+Host: 127.0.0.1
-## -----+DB Version: 07.01.0002
-## -----+ODBC Version: 03.80
-## From: <derived table> [?? x 1]
-## 
-##       user
-## 1  dbadmin
-## ..     ...
+Source:   query [?? x 1]
+Database: Vertica ODBC Connection
+-----+DSN: VerticaDSN
+-----+Host: 127.0.0.1
+-----+DB Version: 08.00.0000
+-----+ODBC Version: 03.80
+
+    user
+  <fctr>
+1 dbadmin
 ```
+
+#### External Procedures
+
+vertica.dplyr allows for external procedures to be called with the following syntax:
+
+```
+results <- select(vertica, some_external_procedure('arg1', 'arg2'))
+```
+
+In the above command, we pass in the vertica source object and call an external procedure with the name "some_external_procedure" and pass it string arguments 'arg1' and 'arg2'. Below is a more concrete example:
+
+```
+copy_to(vertica, iris, "my_iris")
+my_model <- select(vertica, kmeans('my_iris_model', 'my_iris', 'Sepal.Length, Sepal.Width, Petal.Width, Petal.Length', 3L))
+my_model
+```
+
+The above has the following output:
+
+```
+Source:   query [?? x 0]
+Database: Vertica ODBC Connection
+-----+DSN: VerticaDSN
+-----+Host: 127.0.0.1
+-----+DB Version: 08.00.0000
+-----+ODBC Version: 03.80
+
+                      KMEANS
+1 Finished in 6 iterations\n
+```
+
 
 ### Creating a table in HP Vertica
 
@@ -729,7 +812,7 @@ db_has_table(vertica$con,"foobar")
 ```
 
 ```
-## [1] FALSE
+[1] FALSE
 ```
 
 ```r
@@ -737,7 +820,7 @@ db_has_table(vertica$con,"Salaries")
 ```
 
 ```
-## [1] TRUE
+[1] TRUE
 ```
 
 
@@ -755,34 +838,38 @@ explain(q5)
 ```
 
 ```
-## <SQL>
-## SELECT "origin", "count", "delay"
-## FROM (SELECT "origin", count(*) AS "count", AVG("arr_delay") AS "delay"
-## FROM "flights"
-## WHERE "year" = 2013.0 AND "month" > 1.0 AND "month" < 12.0 AND NOT("arr_delay"IS NULL)
-## GROUP BY "origin") AS "_W22"
-## ORDER BY "delay" DESC
-## 
-## 
-## <PLAN>
-## ------------------------------ QUERY PLAN DESCRIPTION: ------------------------------
-## EXPLAIN SELECT "origin", "count", "delay" FROM (SELECT "origin", count(*) AS "count", AVG("arr_delay") AS "delay" FROM "flights" WHERE "year" = 2013.0 AND "month" > 1.0 AND "month" < 12.0 AND NOT("arr_delay"IS NULL) GROUP BY "origin") AS "_W22" ORDER BY "delay" DESC
-## Access Path:+-SORT [Cost: 220K, Rows: 3] (PATH ID: 1)
-## |  Order: _W22.delay DESC
-## | +---> GROUPBY HASH (LOCAL RESEGMENT GROUPS) [Cost: 220K, Rows: 3] (PATH ID: 3)
-## | |      Aggregates: max(flights.origin), count(*), sum_float(flights.arr_delay), count(flights.arr_delay)
-## | |      Group By: collation(flights.origin, 'en_US')
-## | | +---> STORAGE ACCESS for flights [Cost: 219K, Rows: 280K] (PATH ID: 4)
-## | | |      Projection: public.flights_super
-## | | |      Materialize: flights.arr_delay, flights.origin
-## | | |      Filter: (flights.year = 2013.0)
-## | | |      Filter: ((flights.month > 1.0) AND (flights.month < 12.0))
-## | | |      Filter: (NOT (flights.arr_delay IS NULL))
+<SQL>
+SELECT *
+FROM (SELECT "origin", count(*) AS "count", AVG("arr_delay") AS "delay"
+FROM (SELECT *
+FROM (SELECT *
+FROM (SELECT "year" AS "year", "month" AS "month", "day" AS "day", "origin" AS "origin", "arr_delay" AS "arr_delay"
+FROM "flights") "xmoecdranw"
+WHERE (("year" = 2013.0) AND ("month" > 1.0) AND ("month" < 12.0))) "rwadqnsown"
+WHERE (NOT(("arr_delay") IS NULL))) "uzvummcynv"
+GROUP BY "origin") "lcdmrospht"
+ORDER BY "delay" DESC
+
+
+<PLAN>
+------------------------------ QUERY PLAN DESCRIPTION: ------------------------------
+EXPLAIN SELECT * FROM (SELECT "origin", count(*) AS "count", AVG("arr_delay") AS "delay" FROM (SELECT * FROM (SELECT * FROM (SELECT "year" AS "year", "month" AS "month", "day" AS "day", "origin" AS "origin", "arr_delay" AS "arr_delay" FROM "flights") "xzcgbapklh" WHERE (("year" = 2013.0) AND ("month" > 1.0) AND ("month" < 12.0))) "qzzwbfvten" WHERE (NOT(("arr_delay") IS NULL))) "ckhkkbixgn" GROUP BY "origin") "cmffzzjjhs" ORDER BY "delay" DESC
+Access Path:+-SORT [Cost: 282K, Rows: 3] (PATH ID: 1)
+|  Order: cmffzzjjhs.delay DESC
+| +---> GROUPBY HASH (LOCAL RESEGMENT GROUPS) [Cost: 282K, Rows: 3] (PATH ID: 3)
+| |      Aggregates: max(flights.origin), count(*), sum_float(flights.arr_delay), count(flights.arr_delay)
+| |      Group By: collation(flights.origin, 'en_US')
+| | +---> STORAGE ACCESS for flights [Cost: 280K, Rows: 280K] (PATH ID: 4)
+| | |      Projection: public.flights_super
+| | |      Materialize: flights.arr_delay, flights.origin
+| | |      Filter: (flights.year = 2013.0)
+| | |      Filter: ((flights.month > 1.0) AND (flights.month < 12.0))
+| | |      Filter: (NOT (flights.arr_delay IS NULL))
 ```
 
 ### Saving queries to views and tables
 
-`compute` and `db_save_view` allow you to save your `tbl` objects to tables and views in HP Vertica, respectively. Once saved as a view or table, they can be transported to Distributed R via `tbl2dframe`,`tbl2darray`, and `tbl2darrays` (described in the following section). For a given `tbl` named `foo`:
+`compute` and `db_save_view` allow you to save your `tbl` objects to tables and views in HP Vertica, respectively. For a given `tbl` named `foo`:
 
 
 ```r
@@ -790,29 +877,6 @@ explain(q5)
 compute(foo,name="mytable")
 # Save to a view named "myview"
 db_save_view(foo,name="myview")
-```
-
-## Using HP Distributed R's Native-Data-Loader with tbl2darray, tbl2darrays, and tbl2dframe (requires vRODBC)
-There exists a method of [fast parallel transfer][3] between the HP Vertica database and HP Distributed R. This technique utilizes several parallel socket connections, through which data are pushed from HP Vertica in a data-locality-aware manner. 
-
-The functionality is available in the [HPdata][4] package, along with a standard ODBC connector interface. `HPdata` is another *soft* dependency of vertica.dplyr, meaning that vertica.dplyr only attempts to load it when `tbl2darray`, `tbl2darrays`, or `tbl2dframe` is invoked.
-
-It is possible to convert a `tbl_vertica` object to a Distributed R `dframe` or `darray`. You must provide a `tbl_vertica` object to `tbl2darray`, `tbl2darrays`, or `tbl2dframe` if using a vRODBC-backed tbl_vertica, or the `tbl_vertica` object and a `dsn` reference for ODBC if using a RJDBC-backed tbl_vertica.
-
-You can transform a `tbl_vertica` that uses *either* vRODBC or RJDBC, but the HP Vertica connector uses vRODBC; therefore, an extra `dsn` argument is needed for the RJDBC case.
-
-Additional parameters to `tbl2dframe`, `tbl2darrays`, and `tbl2darray` exist, such as the number of partitions for the constructed dframe or darray. See the manual page for details.
-
-
-```r
-# Example 1, using vRODBC-backed tbl_vertica
-foo <- tbl(vertica,"myTable")
-my.dframe <- tbl2dframe(foo)
-
-# Example 2, using a RJDBC-backed tbl_vertica
-foo <- tbl(vertica,"myTable")
-bar <- mutate(foo,col=col1+col2)
-my.darray <- tbl2darray(bar,dsn="VerticaDSN",npartitions=4)
 ```
 
 ## List of tested HP Vertica analytic functions and their vertica.dplyr names
@@ -881,8 +945,6 @@ See the [dplyr docs][1] for how these work. Many others may be functional, but h
 
 * db_drop_view
 * db_save_view
-* tbl2darray
-* tbl2dframe
 
 ## Auxiliary functions
 The following is a list of functions that are used to implement many of the functions listed above in dplyr, and are, therefore, exported as part of the package for dispatch in certain generic functions. They may be used, but are not meant to be directly invoked, and are thus not documented for their behavior:

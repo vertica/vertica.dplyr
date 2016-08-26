@@ -65,24 +65,16 @@ list_udf <- function(src,type=NULL) {
 }
 
 validate_range <- function(range) {
-  if(is.character(range)) {
-    range[1] = tryCatch({val=eval(parse(text=range[1]))
-                 assert_that(!is.na(val))
-                 val
-               },
-                 error = function(e){
-                 range[1] = -Inf
-               })
+  if(is.character(range) || inherits(range, "sql")) {
+    range = as.character(range)
+    range = paste("c",range, collapse = "",sep = "")
 
-    range[2] = tryCatch({val=eval(parse(text=range[2]))
-                 assert_that(!is.na(val))
-                 val
-               },
-                 error = function(e){
-                 range[2] = Inf
-               }) 
+    range = eval(parse(text = range))
+    if(is.null(range[1]))
+	range[1] <- -Inf
+    if(is.null(range[2]))
+	range[2] <- Inf
     }
-
     if(!is.null(range)) range <- as.numeric(range)
 
   range
@@ -221,13 +213,18 @@ vertica_agg_func <- sql_translator(
   ,bitwXor = sql_prefix("bit_xor",1)
 )
 
+
 # Powers translations of scalar and window functions
 #' @export
-src_translate_env.src_vertica <- function(x) {
+sql_translate_env.VerticaConnection <- function(x) {
   sql_variant(scalar = vertica_scalar_func,
   window = vertica_window_func,
   aggregate = vertica_agg_func
   )
+}
+
+sql_translate_env.src_vertica <- function(x) {
+   sql_translate_env(x$con)
 }
 
 # Queries the database for UDFs, and appropriately "registers" them in vertica.dplyr
@@ -258,7 +255,7 @@ import_udf <- function(src) {
   vertica_scalar_func <- list2env(scalar_funs, dplyr:::copy_env(vertica_scalar_func))
   vertica_window_func <- list2env(transform_funs, dplyr:::copy_env(vertica_window_func))
 
-  assign("src_translate_env.src_vertica", function(x) {
+  assign("sql_translate_env.VerticaConnection", function(x) {
     sql_variant(
       scalar = vertica_scalar_func,
       window = vertica_window_func,
