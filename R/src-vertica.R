@@ -746,6 +746,9 @@ op_sort.op_system <- function(op)
 	NULL
 }
 
+#  utility function stolen from dplyr.		
+commas <- function(...) paste0(..., collapse = ", ")
+
 print.tbl_vertica <- function (x, ..., n = NULL, width = NULL) 
 {
     cat("Source:   query ", dim_desc(x), "\n", sep = "")
